@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.pyc
+
+# Distribution / packaging
+build
+dist
+*.egg-info
+
+# dotenv
+.env
+
+# Sphinx documentation
+docs/_build/
+
+# Tox
+.tox
+
+# virtualenv
+venv/

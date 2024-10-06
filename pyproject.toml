@@ -1,0 +1,72 @@
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+# :see: https://greenbone.github.io/autohooks/installation.html
+[tool.autohooks]
+mode = "poetry"
+pre-commit = [
+    "autohooks.plugins.black",
+    "autohooks.plugins.ruff",
+    "autohooks.plugins.mypy",
+    "autohooks.plugins.pytest"
+]
+
+[tool.mypy]
+strict = true
+
+# :see: https://python-poetry.org/docs/pyproject/
+[tool.poetry]
+name = "phx-filters-pydantic"
+version = "0.1.0"
+description = "Pydantic integration for Filters"
+authors = ["Phoenix Zerin <phx@phx.nz>"]
+license = "MIT"
+readme = "README.rst"
+
+documentation = "https://phx-filters-pydantic.readthedocs.io/"
+repository = "https://github.com/todofixthis/filters-pydantic"
+
+keywords = [
+]
+# :see: https://pypi.org/classifiers/
+classifiers = [
+]
+
+include = [
+    { path = "LICENCE.txt", format = "sdist" },
+    { path = "docs", format = "sdist" },
+    { path = "test", format = "sdist" }
+]
+exclude = ["docs/_build"]
+packages = [{ include = "filters_pydantic", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+[tool.poetry.group.dev.dependencies]
+autohooks = "^23"
+autohooks-plugin-black = "^23"
+autohooks-plugin-mypy = "^23"
+autohooks-plugin-pytest = "^23"
+autohooks-plugin-ruff = "^23"
+black = "^24"
+mypy = "^1"
+pytest = "^8"
+sphinx = "^8"
+sphinx_rtd_theme = "^2"
+tox = "^4"
+
+# Used by GitHub Actions.
+[tool.poetry.group.ci.dependencies]
+mypy = "^1"
+pytest = "^8"
+sphinx = "^8"
+sphinx_rtd_theme = "^2"
+
+[tool.poetry.urls]
+Changelog = "https://github.com/todofixthis/filters-pydantic/releases"
+Issues = "https://github.com/todofixthis/filters-pydantic/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
