@@ -42,7 +42,9 @@ exclude = ["docs/_build"]
 packages = [{ include = "filters_pydantic", from = "src" }]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+# I'm only one person, so to keep from getting overwhelmed, I'm only committing to
+# supporting the 3 most recent versions of Python.
+python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
 autohooks = "^23"
@@ -69,4 +71,4 @@ Changelog = "https://github.com/todofixthis/filters-pydantic/releases"
 Issues = "https://github.com/todofixthis/filters-pydantic/issues"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["test"]
