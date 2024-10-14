@@ -56,7 +56,7 @@ black = "^24"
 mypy = "^1"
 pytest = "^8"
 sphinx = "^7"
-sphinx_rtd_theme = "^2"
+sphinx_rtd_theme = "^3"
 tox = "^4"
 
 # Used by GitHub Actions.
@@ -64,7 +64,7 @@ tox = "^4"
 mypy = "^1"
 pytest = "^8"
 sphinx = "^7"
-sphinx_rtd_theme = "^2"
+sphinx_rtd_theme = "^3"
 
 [tool.poetry.urls]
 Changelog = "https://github.com/todofixthis/filters-pydantic/releases"
