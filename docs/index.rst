@@ -15,9 +15,9 @@ Requirements
 ------------
 Pydantic Filters is known to be compatible with the following Python versions:
 
+- 3.13
 - 3.12
 - 3.11
-- 3.10
 
 .. note::
 

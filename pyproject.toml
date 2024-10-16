@@ -44,7 +44,7 @@ packages = [{ include = "filters_pydantic", from = "src" }]
 [tool.poetry.dependencies]
 # I'm only one person, so to keep from getting overwhelmed, I'm only committing to
 # supporting the 3 most recent versions of Python.
-python = "^3.10"
+python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
 autohooks = "^23"
@@ -55,16 +55,16 @@ autohooks-plugin-ruff = "^23"
 black = "^24"
 mypy = "^1"
 pytest = "^8"
-sphinx = "^7"
-sphinx_rtd_theme = "^2"
+sphinx = "^8"
+sphinx_rtd_theme = "^3"
 tox = "^4"
 
 # Used by GitHub Actions.
 [tool.poetry.group.ci.dependencies]
 mypy = "^1"
 pytest = "^8"
-sphinx = "^7"
-sphinx_rtd_theme = "^2"
+sphinx = "^8"
+sphinx_rtd_theme = "^3"
 
 [tool.poetry.urls]
 Changelog = "https://github.com/todofixthis/filters-pydantic/releases"
