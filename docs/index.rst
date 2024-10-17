@@ -5,6 +5,8 @@ Pydantic Filters
    :maxdepth: 1
    :caption: Contents:
 
+   api
+
 Pydantic integration for Filters
 
 Getting Started

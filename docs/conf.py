@@ -34,10 +34,11 @@ intersphinx_mapping = {
 
 # -- Options for autodoc extension -------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#configuration
+autoclass_content = "both"
 autodoc_default_options = {
     "members": True,
     "member-order": "alphabetical",
-    "special-members": True,
+    "special-members": False,
     "undoc-members": True,
 }
 
