@@ -72,3 +72,15 @@ Issues = "https://github.com/todofixthis/filters-pydantic/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.tox]
+env_list = ["py313", "py312", "py311"]
+
+[tool.tox.env_run_base]
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [["poetry", "install", "--with=ci",  "--sync"]]
+commands = [
+    ["poetry", "run", "pytest"],
+    ["poetry", "run", "mypy", "src", "test"]
+]
