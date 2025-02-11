@@ -47,7 +47,7 @@ packages = [{ include = "filters_pydantic", from = "src" }]
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-autohooks = "^24"
+autohooks = "^25"
 autohooks-plugin-black = "^23"
 autohooks-plugin-mypy = "^23"
 autohooks-plugin-pytest = "^23"

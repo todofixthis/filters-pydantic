@@ -34,13 +34,13 @@ trio = ["trio (>=0.26.1)"]
 
 [[package]]
 name = "autohooks"
-version = "24.2.0"
+version = "25.2.0"
 description = "Library for managing git hooks"
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = "<4.0,>=3.9"
 files = [
-    {file = "autohooks-24.2.0-py3-none-any.whl", hash = "sha256:a2097de2e092fa7b78a17b63b73980d3cc42b01065feb2caf0d41e2bb506621b"},
-    {file = "autohooks-24.2.0.tar.gz", hash = "sha256:ee929a9f7ff68e61c73201de817b679df168b4465be1026550a71956b419200b"},
+    {file = "autohooks-25.2.0-py3-none-any.whl", hash = "sha256:5a2ed5fc03d899725638d2ca6bcb367f025a6196b225a5ea177e502fdf1bb065"},
+    {file = "autohooks-25.2.0.tar.gz", hash = "sha256:e306a24801fbc815628ebe48b063e2853a0857eb00bbdae733175e06e0ce8a84"},
 ]
 
 [package.dependencies]
@@ -1360,4 +1360,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "7c68ca8a4c8e5803ccb19e7342e351ba575b4b72e6af8289c55c8632336a236f"
+content-hash = "be0d714a62c3f5abab14a903ca44d57bc601db2eb3142f183ad38e44dd533be5"
