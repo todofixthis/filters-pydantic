@@ -96,17 +96,17 @@ pytest = ">=7.1.2"
 
 [[package]]
 name = "autohooks-plugin-ruff"
-version = "24.1.0"
+version = "25.2.0"
 description = "An autohooks plugin for python code formatting via ruff"
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = "<4.0,>=3.9"
 files = [
-    {file = "autohooks_plugin_ruff-24.1.0-py3-none-any.whl", hash = "sha256:2a072805b60abb63311abab84a6600cde9112840ab68f39af53f517648341651"},
-    {file = "autohooks_plugin_ruff-24.1.0.tar.gz", hash = "sha256:1a8dd732a2e7215c1c66faa79ac499195859c499af7ce52284ee6003ece4f25c"},
+    {file = "autohooks_plugin_ruff-25.2.0-py3-none-any.whl", hash = "sha256:b0e3bbfb2d8bb94c509dad291801af1f6821877147b7f02f7e93812f8aef6ba1"},
+    {file = "autohooks_plugin_ruff-25.2.0.tar.gz", hash = "sha256:3290cd5b1939d80113e5a3b6408e4728e1c2bed0960b8101479897a196dc69d6"},
 ]
 
 [package.dependencies]
-autohooks = ">=23.4.0"
+autohooks = ">=25.2.0"
 ruff = ">=0.0.272"
 
 [[package]]
@@ -1360,4 +1360,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "be0d714a62c3f5abab14a903ca44d57bc601db2eb3142f183ad38e44dd533be5"
+content-hash = "72e676651a0f49952a57d6d404ff2a654e15797e0c2515da309f67a92ce5e73f"
