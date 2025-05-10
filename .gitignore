@@ -3,8 +3,8 @@ __pycache__
 *.pyc
 
 # Distribution / packaging
-build
-dist
+build/
+dist/
 *.egg-info
 
 # dotenv
@@ -14,7 +14,7 @@ dist
 docs/_build/
 
 # Tox
-.tox
+.tox/
 
 # virtualenv
-venv/
+.venv/
