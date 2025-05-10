@@ -12,7 +12,7 @@ jobs:
         python-version:
           # Note: Use quotes to avoid float cast - especially important if the
           # version number ends with 0!
-          - "3.14"
+          # - "3.14" not released yet
           - "3.13"
           - "3.12"
 
