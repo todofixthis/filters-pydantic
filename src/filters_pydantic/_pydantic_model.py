@@ -37,6 +37,9 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
         super().__init__()
         self.model = model
 
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.model.__name__})"
+
     def _apply(self, value: Any) -> Any:
         try:
             return self.model.model_validate(value)
