@@ -49,12 +49,10 @@ dev = [
     "hatchling>=1.27.0,<2",
     "mypy>=2,<3",
     "pytest>=9,<10",
-    "pyyaml>=6.0.3",
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3,<4",
     "tox>=4,<5",
     "tox-uv>=1.25.0,<2",
-    "types-pyyaml>=6,<7",
 ]
 ci = [
     "mypy>=2,<3",
@@ -108,7 +106,7 @@ exclude = ["docs/_build"]
 "src/filters_pydantic" = "filters_pydantic"
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
+testpaths = ["test", "scripts"]
 
 [tool.tox]
 env_list = ["py314", "py313", "py312"]
