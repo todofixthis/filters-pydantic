@@ -43,7 +43,7 @@ One file per public symbol in `test/`, named `test_{symbol_name}.py`. Always `im
 
 Test functions: `test_{symbol_name}_{scenario}`. Each test file needs a module-level docstring.
 
-Every test function also needs its own one-sentence docstring stating the scenario under test — what must hold, not a restatement of the function name or the call being made. It's the sentence a reviewer checks an assertion against, so name the requirement (e.g. "A single chain failure surfaces as one `value_error` located at the failing field"), not the mechanism. This isn't the code the "Writing for coding agents" rule below tells you to skip documenting — a requirement lives in the author's head, not in the test body — see ADR 004.
+Test conventions live in `.agents/rules/testing.md`; read it before writing or changing tests.
 
 ## Docstrings
 
@@ -73,7 +73,7 @@ Place comments on the line preceding the code they document, not as trailing com
 
 Use `.claude/worktrees/` for isolated workspaces (project-local, gitignored).
 
-Keep `.claude/` a real directory — only `.claude/skills` is a symlink into `.agents/skills`. If `.claude/` itself is a symlink, the native worktree tool refuses to run.
+Keep `.claude/` a real directory — only `.claude/skills` and `.claude/rules` are symlinks into `.agents/skills` and `.agents/rules`. If `.claude/` itself is a symlink, the native worktree tool refuses to run.
 
 After switching to a worktree, run the autohooks activate command (see Commands) to install the pre-commit hook for that worktree.
 
