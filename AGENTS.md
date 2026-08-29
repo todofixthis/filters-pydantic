@@ -43,6 +43,8 @@ One file per public symbol in `test/`, named `test_{symbol_name}.py`. Always `im
 
 Test functions: `test_{symbol_name}_{scenario}`. Each test file needs a module-level docstring.
 
+Every test function also needs its own one-sentence docstring stating the scenario under test — what must hold, not a restatement of the function name or the call being made. It's the sentence a reviewer checks an assertion against, so name the requirement (e.g. "A single chain failure surfaces as one `value_error` located at the failing field"), not the mechanism. This isn't the code the "Writing for coding agents" rule below tells you to skip documenting — a requirement lives in the author's head, not in the test body — see ADR 004.
+
 ## Docstrings
 
 Google/Napoleon format (`Args:`, `Returns:`, `Note:`) — not Sphinx `:param:` style. Max 80 chars per line. Escape backslashes (e.g. `'\\n'` not `'\n'`). Blank line before lists inside `Args:` sections to avoid Sphinx indentation warnings. ReadTheDocs treats all Sphinx warnings as errors — resolve them before pushing.
