@@ -1,14 +1,30 @@
 """Tests for filters_pydantic.PydanticModel."""
 
-from typing import Any, Callable
+from typing import Any, Protocol
 
 import filters as f
 import pydantic
 
 from filters_pydantic import PydanticModel
 
-AssertFilterPasses = Callable[..., Any]
-AssertFilterErrors = Callable[..., Any]
+
+# phx-filters ships no py.typed marker, so BaseFilter (and thus
+# filter_instance) is untyped under mypy either way — these Protocols exist
+# to document filters.pytest's fixture signatures, not to check them.
+class AssertFilterPasses(Protocol):
+    def __call__(
+        self, filter_instance: Any, test_value: Any, expected_value: Any = ...
+    ) -> Any: ...
+
+
+class AssertFilterErrors(Protocol):
+    def __call__(
+        self,
+        filter_instance: Any,
+        test_value: Any,
+        expected_codes: Any,
+        expected_value: Any = ...,
+    ) -> Any: ...
 
 
 class Address(pydantic.BaseModel):
