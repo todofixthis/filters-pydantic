@@ -40,6 +40,33 @@ and does the actual validation::
 A value the chain rejects raises the model's usual ``pydantic.ValidationError``,
 with every filter error message for that field joined into one.
 
+Validating a Model Inside a Filter Chain
+-----------------------------------------
+Going the other direction, wrap a pydantic model in ``PydanticModel`` to validate a
+value against it from *inside* a ``filters`` chain — e.g. nested inside a
+``FilterMapper`` or ``FilterRepeater``::
+
+   import filters as f
+   from pydantic import BaseModel
+
+   from filters_pydantic import PydanticModel
+
+
+   class Address(BaseModel):
+       postcode: str
+
+
+   schema = f.FilterMapper({"address": PydanticModel(Address)})
+   runner = f.FilterRunner(schema, {"address": {}})
+   runner.is_valid()
+   # False
+   runner.get_errors()
+   # {'address.postcode': [{'code': 'invalid', 'message': 'Field required'}]}
+
+Unlike ``FilterField``, which joins every chain error into one message,
+``PydanticModel`` reports each pydantic validation error individually, keyed by
+its dotted field path.
+
 Requirements
 ------------
 Pydantic Filters is known to be compatible with the following Python versions:
