@@ -16,6 +16,7 @@ class Person(BaseModel):
 
 
 def test_filter_field_pass_applies_chain() -> None:
+    """The filter chain, not pydantic, produces the field's final value."""
     person = Person(name="  Phoenix  ", age=42)
 
     # ``f.Unicode`` on its own doesn't strip whitespace; the point here is
@@ -25,11 +26,12 @@ def test_filter_field_pass_applies_chain() -> None:
 
 
 def test_filter_field_pass_coerces_before_pydantic_validates() -> None:
-    # ``f.Int`` coerces the incoming str to an int before pydantic's own
-    # ``int`` schema runs, so a numeric string is accepted — a shape that
-    # doesn't fit ``Person``'s own ``__init__`` typing, so validate via a
-    # dict, the way data from an external source (e.g. a JSON request body)
-    # would arrive.
+    """A numeric string for an int field is coerced by the chain before
+    pydantic's own int schema runs, so it's accepted and yields a real int.
+    """
+    # Validate via a dict, the way data from an external source (e.g. a
+    # JSON request body) would arrive — ``Person(age="7")`` is typed
+    # against the annotation and fails mypy even though it's valid here.
     person = Person.model_validate({"name": "Phoenix", "age": "7"})
 
     assert person.age == 7
@@ -37,15 +39,20 @@ def test_filter_field_pass_coerces_before_pydantic_validates() -> None:
 
 
 def test_filter_field_pass_none_short_circuits_chain() -> None:
-    # ``None`` passes through every filter automatically (handled by
-    # ``BaseFilter`` before ``_apply`` runs), so a chain without
-    # ``f.Required`` never rejects it.
+    """``None`` passes through a chain with no ``f.Required``, since
+    ``BaseFilter`` short-circuits every filter on ``None`` before ``_apply``
+    runs.
+    """
     person = Person(name="Phoenix", age=1, nickname=None)
 
     assert person.nickname is None
 
 
 def test_filter_field_pass_composes_with_field_default() -> None:
+    """``FilterField`` and ``pydantic.Field`` in the same ``Annotated`` slot
+    both apply — the field's default and its ``ge=0`` constraint still hold.
+    """
+
     class Config(BaseModel):
         retries: Annotated[int, FilterField(f.Int | f.Min(0)), Field(ge=0)] = 3
 
@@ -54,6 +61,9 @@ def test_filter_field_pass_composes_with_field_default() -> None:
 
 
 def test_filter_field_fail_reports_single_filter_error() -> None:
+    """A single chain failure surfaces as one ``value_error`` located at the
+    failing field.
+    """
     with pytest.raises(ValidationError) as exc_info:
         Person(name="", age=1)
 
@@ -63,6 +73,9 @@ def test_filter_field_fail_reports_single_filter_error() -> None:
 
 
 def test_filter_field_fail_reports_none_as_required_violation() -> None:
+    """``None`` reaching an ``f.Required`` chain is reported as a failure at
+    that field, not treated as a value to pass through.
+    """
     with pytest.raises(ValidationError) as exc_info:
         Person.model_validate({"name": None, "age": 1})
 
@@ -71,6 +84,10 @@ def test_filter_field_fail_reports_none_as_required_violation() -> None:
 
 
 def test_filter_field_fail_joins_multiple_chain_errors() -> None:
+    """Multiple ``FilterMapper`` sub-key failures collapse into one
+    ``value_error`` whose message names every failing sub-key.
+    """
+
     class Point(BaseModel):
         coords: Annotated[
             dict[str, int],
@@ -91,9 +108,12 @@ def test_filter_field_fail_joins_multiple_chain_errors() -> None:
 
 
 def test_filter_field_fail_chain_output_mismatched_type_is_pydantic_error() -> None:
-    # The chain itself passes (``f.Unicode`` accepts anything), but its
-    # output doesn't satisfy the annotated ``int`` — that's reported by
-    # pydantic's own schema, not as a ``value_error`` from the chain.
+    """A chain output that doesn't satisfy the annotated type fails as a
+    plain pydantic error, not as a ``value_error`` from the chain.
+    """
+
+    # The chain itself passes (``f.Unicode`` accepts anything); it's the
+    # output that fails the annotated ``int``.
     class Ticket(BaseModel):
         number: Annotated[int, FilterField(f.Unicode)]
 

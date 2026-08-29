@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-08-29
-tags: [pydantic, filters, core-schema, api-design]
+scope: [src/filters_pydantic/_filter_field.py]
 summary: FilterField is attached via typing.Annotated metadata and implements __get_pydantic_core_schema__ as a before-validator, translating filters errors into a single ValueError per field.
 ---
 
@@ -90,17 +90,6 @@ and produces a value that pydantic's own schema for the annotated type then
 validates or coerces — the annotated type acts as a safety net and drives
 JSON-schema generation, while the filter chain does the real work.
 
-On failure, `FilterField` collects every message from
-`FilterRunner.get_errors()` (chains can report more than one error, e.g. via a
-nested `FilterMapper`), prefixes each with its filters sub-key when one is
-present, and raises a single `ValueError` with all of them joined —
-pydantic then reports it as one `value_error` entry located at that field,
-consistent with how it already reports any other single-exception validator
-failure. Filters' individual error codes aren't currently surfaced
-structurally in the `ValidationError`; revisit this (e.g. via
-`PydanticCustomError` context) if a consumer needs to branch on them
-programmatically.
-
 ## Consequences
 
 - Every field using `FilterField` needs an explicit, accurate type
@@ -111,6 +100,17 @@ programmatically.
   annotation fails at the pydantic-coercion step, not inside the chain
   itself — the resulting error message names the annotation's type, not the
   filter chain, which may be confusing until this is documented.
-- Multiple filter errors on one field collapse into a single joined message;
-  downstream code that needs individual error codes must inspect
-  `FilterRunner` directly rather than the model's `ValidationError`.
+- On failure, `FilterField` collects every message from
+  [`FilterRunner`][]`.get_errors()` (chains can report more than one error,
+  e.g. via a nested `FilterMapper`), prefixes each with its filters sub-key
+  when one is present, and raises a single `ValueError` with all of them
+  joined — pydantic then reports it as one `value_error` entry located at
+  that field, consistent with how it already reports any other
+  single-exception validator failure. Filters' individual error codes
+  aren't currently surfaced structurally in the `ValidationError`; revisit
+  this (e.g. via `PydanticCustomError` context) if a consumer needs to
+  branch on them programmatically. Downstream code that needs individual
+  error codes must inspect `FilterRunner` directly rather than the model's
+  `ValidationError`.
+
+[`FilterRunner`]: https://github.com/todofixthis/filters/blob/develop/src/filters/handlers.py

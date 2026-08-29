@@ -1,9 +1,9 @@
 ---
 name: phx-filters
-description: Use when writing or debugging phx-filters chains attached to pydantic models via FilterField in this project — covers Annotated placement, validator ordering, and error-message shape.
+description: Use when writing or debugging phx-filters integrations in this project — FilterField running a chain inside a pydantic field, or PydanticModel running a model inside a chain — covers Annotated placement, validator ordering, and error-message shape in both directions.
 ---
 
-# Working with phx-filters via FilterField
+# Working with phx-filters
 
 This skill covers only what's non-obvious about wiring `phx-filters` chains
 into pydantic models in this project. For chain composition itself (`|`,
@@ -53,3 +53,23 @@ sub-key when non-empty (e.g. a `FilterMapper` chain on a dict field produces
 *codes* aren't surfaced in the `ValidationError` — only the rendered
 messages. If a caller needs to branch on codes, they need `FilterRunner`
 directly, not the model.
+
+## Validating via a pydantic model with `PydanticModel`
+
+```python
+f.Required | PydanticModel(Person)
+```
+
+Each `pydantic.ValidationError` entry becomes its own phx-filters error,
+keyed by that entry's dot-joined `loc` path — so nesting `PydanticModel`
+inside a `FilterMapper` produces correctly-scoped keys (e.g.
+`address.postcode`), matching how `FilterMapper` already reports its own
+multi-key failures. Every error surfaces as `PydanticModel.CODE_INVALID`;
+pydantic's finer-grained error types (`missing`, `int_parsing`, etc.)
+aren't preserved as distinct phx-filters codes. See
+`docs/adr/002-pydanticmodel-error-translation.md` for why this filter
+reports per-key rather than joining messages the way `FilterField` does.
+
+A whole-model error (e.g. from `model_validator(mode="after")`) has an
+empty `loc`, so it lands at `PydanticModel`'s own key rather than a
+sub-key — same as any other non-nested filter's own failures.
