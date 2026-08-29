@@ -5,9 +5,10 @@ Run manually: uv run python -m scripts.adr.generate_index
 
     uv run python -m scripts.adr.generate_index --for src/filters_pydantic/_filter_field.py
 
-reports the decisions scoping that path. The hook runs it over the staged paths, which
-is the direction INDEX.md cannot serve: the index reaches a reader who already suspects
-a decision exists, where this reaches one who does not.
+reports the decisions scoping that path — the direction INDEX.md cannot serve, since
+the index reaches a reader who already suspects a decision exists, where this reaches
+one who does not. Unlike index generation, this isn't wired into ``.autohooks/adr_index.py``
+or CI here (ADR 003's Consequences); run it by hand when editing a scoped path.
 
 Stdlib-only by design (ADR 003): ADR frontmatter is a flat key/value block, so a
 small line parser suffices. That parser lives in scripts.frontmatter.
