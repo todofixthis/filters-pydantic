@@ -43,8 +43,6 @@ One file per public symbol in `test/`, named `test_{symbol_name}.py`. Always `im
 
 Test functions: `test_{symbol_name}_{scenario}`. Each test file needs a module-level docstring.
 
-Test conventions live in `.agents/rules/testing.md`; read it before writing or changing tests.
-
 ## Docstrings
 
 Google/Napoleon format (`Args:`, `Returns:`, `Note:`) — not Sphinx `:param:` style. Max 80 chars per line. Escape backslashes (e.g. `'\\n'` not `'\n'`). Blank line before lists inside `Args:` sections to avoid Sphinx indentation warnings. ReadTheDocs treats all Sphinx warnings as errors — resolve them before pushing.

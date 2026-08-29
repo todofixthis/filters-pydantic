@@ -4,7 +4,7 @@ date: 2026-08-29
 scope: [test/, scripts/]
 summary: Every test function carries a one-sentence docstring stating the scenario under test — what must hold, not a restatement of the function name or call.
 revisit-when: Generic or restating docstrings recur across reviews, i.e. the convention alone isn't holding, and presence-only enforcement (e.g. ruff's pydocstyle "D" rules) is worth adding.
-archived-because: A `.claude/rules/testing.md` rule with `paths` frontmatter loads this convention whenever an agent reads or edits an existing matching test file; a brand-new file's first `Write` doesn't trigger it, so `AGENTS.md`'s always-loaded pointer to the same file backs that case.
+archived-because: A `.claude/rules/testing.md` rule with `paths` frontmatter loads this convention whenever an agent reads or edits an existing matching test file; a brand-new file's first `Write` doesn't trigger it, and that gap is accepted rather than backstopped.
 ---
 
 # 004: Docstring Per Test Function
@@ -86,8 +86,8 @@ it states a claim in a full sentence rather than a scenario label.
   matching test file rather than read once from this ADR or from `AGENTS.md` prose;
   this document keeps the record of why.
 - Claude Code loads a `paths`-scoped rule on read, not on write
-  ([anthropics/claude-code#23478][]), so a brand-new test file's first `Write` still
-  depends on `AGENTS.md`'s pointer rather than the rule firing on its own.
+  ([anthropics/claude-code#23478][]), so a brand-new test file's first `Write` isn't
+  covered by the rule — an accepted gap, not one `AGENTS.md` backstops.
 
 [`AGENTS.md`]: ../../AGENTS.md
 [anthropics/claude-code#23478]: https://github.com/anthropics/claude-code/issues/23478
