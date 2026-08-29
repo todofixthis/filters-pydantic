@@ -7,11 +7,30 @@ name = "phx-filters-pydantic"
 version = "0.1.0"
 description = "Pydantic integration for Filters"
 authors = [{ name = "Phoenix Zerin", email = "phx@phx.nz" }]
-requires-python = "~=3.12"
+requires-python = ">=3.12, <4"
 readme = "README.rst"
 license = "MIT"
-keywords = []
-classifiers = []
+keywords = [
+    "data processing",
+    "pipeline",
+    "pydantic",
+    "transformation",
+    "validation",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Filters",
+]
+dependencies = [
+    "phx-filters>=3,<4",
+    "pydantic>=2,<3",
+]
 
 [project.urls]
 Repository = "https://github.com/todofixthis/filters-pydantic"
@@ -30,10 +49,12 @@ dev = [
     "hatchling>=1.27.0,<2",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "pyyaml>=6.0.3",
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3,<4",
     "tox>=4,<5",
     "tox-uv>=1.25.0,<2",
+    "types-pyyaml>=6,<7",
 ]
 ci = [
     "mypy>=2,<3",
@@ -49,7 +70,8 @@ pre-commit = [
     "autohooks.plugins.black",
     "autohooks.plugins.ruff",
     "autohooks.plugins.mypy",
-    "autohooks.plugins.pytest"
+    "autohooks.plugins.pytest",
+    "adr_index",
 ]
 
 [tool.uv]
@@ -57,9 +79,17 @@ default-groups = [
     "dev",
     "ci",
 ]
+keyring-provider = "subprocess"
+# Fix SSL errors when running in Leash containers
+system-certs = true
 
 [tool.mypy]
 strict = true
+
+[[tool.mypy.overrides]]
+# phx-filters ships no py.typed marker.
+module = "filters.*"
+ignore_missing_imports = true
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -81,7 +111,7 @@ exclude = ["docs/_build"]
 testpaths = ["test"]
 
 [tool.tox]
-env_list = ["py313", "py312"]
+env_list = ["py314", "py313", "py312"]
 
 [tool.tox.env_run_base]
 commands = [
