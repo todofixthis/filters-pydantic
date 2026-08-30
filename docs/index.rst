@@ -40,6 +40,14 @@ and does the actual validation::
 A value the chain rejects raises the model's usual ``pydantic.ValidationError``,
 with every filter error message for that field joined into one.
 
+A chain built inline like this is shared across every validation of that field,
+so ``FilterField`` serialises concurrent access to it with a lock (see
+`ADR 005 <https://github.com/todofixthis/filters-pydantic/blob/main/docs/adr/005-serialise-shared-filter-chains.md>`_).
+For an expensive chain (I/O, a slow computation) under concurrent load, or a chain
+you deliberately share across more than one field, pass a zero-argument callable
+instead — ``FilterField(lambda: f.Required | f.Unicode | f.NotEmpty)`` — so each
+validation resolves its own independent chain and skips the lock entirely.
+
 Validating a Model Inside a Filter Chain
 -----------------------------------------
 Going the other direction, wrap a pydantic model in ``PydanticModel`` to validate a

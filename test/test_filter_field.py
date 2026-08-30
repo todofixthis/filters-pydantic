@@ -1,5 +1,7 @@
 """Tests for filters_pydantic.FilterField."""
 
+import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Optional
 
 import filters as f
@@ -166,3 +168,36 @@ def test_filter_field_fail_chain_output_mismatched_type_is_pydantic_error() -> N
 
     (error,) = exc_info.value.errors()
     assert error["type"] != "value_error"
+
+
+def test_filter_field_pass_concurrent_validation_does_not_corrupt_other_calls() -> None:
+    """Two threads validating the same field's shared chain at once don't
+    clobber each other's result (ADR 005) — every valid input is still
+    accepted and every invalid input is still rejected, regardless of what
+    other threads are doing concurrently.
+    """
+
+    # phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
+    class SlowUnicode(f.BaseFilter):  # type: ignore[misc]
+        """Widens the race window so concurrent full_clean() calls overlap."""
+
+        def _apply(self, value: object) -> object:
+            time.sleep(0.005)
+            return self._filter(value, f.Unicode)
+
+    class Widget(BaseModel):
+        name: Annotated[str, FilterField(SlowUnicode() | f.NotEmpty)]
+
+    def validate(index: int) -> tuple[int, bool]:
+        value = "ok" if index % 2 == 0 else ""
+        try:
+            Widget(name=value)
+            return index, True
+        except ValidationError:
+            return index, False
+
+    with ThreadPoolExecutor(max_workers=40) as executor:
+        results = list(executor.map(validate, range(40)))
+
+    for index, passed in results:
+        assert passed == (index % 2 == 0), f"input {index} got the wrong result"

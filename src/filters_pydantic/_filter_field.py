@@ -1,5 +1,6 @@
 """Applies a phx-filters chain to a pydantic model field."""
 
+import threading
 from typing import Any
 
 import filters as f
@@ -39,6 +40,15 @@ class FilterField:
             raise TypeError("filter_chain must not be None")
         self.filter_chain = filter_chain
 
+        # A pre-built chain instance is shared across every validation of
+        # this field; phx-filters mutates it in place to route errors, so
+        # concurrent validations must be serialised (ADR 005). A callable or
+        # filter class already resolves an independent instance per call and
+        # needs no lock.
+        self._lock = (
+            threading.RLock() if isinstance(filter_chain, f.BaseFilter) else None
+        )
+
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.filter_chain})"
 
@@ -66,6 +76,13 @@ class FilterField:
                 without this it would otherwise be misreported as a generic
                 ``value_error`` with the real cause discarded.
         """
+        if self._lock is None:
+            return self._apply_filter_chain(value)
+
+        with self._lock:
+            return self._apply_filter_chain(value)
+
+    def _apply_filter_chain(self, value: Any) -> Any:
         runner = f.FilterRunner(self.filter_chain, value, capture_exc_info=True)
         if runner.is_valid():
             return runner.cleaned_data
