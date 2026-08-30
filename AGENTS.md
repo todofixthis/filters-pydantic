@@ -2,11 +2,8 @@
 
 ## Getting Started
 
-Before writing code, check:
-
-- `docs/plans/` — current implementation plan
-- `docs/adr/INDEX.md` — prior decisions (don't re-litigate)
-- `docs/future/` — deferred features (don't re-discuss)
+Before writing code, check `docs/adr/INDEX.md` for prior decisions — don't
+re-litigate them.
 
 ## Architecture Decision Records
 
@@ -39,7 +36,7 @@ Thin integration layer between [pydantic](https://docs.pydantic.dev/) and [phx-f
 
 ## Tests
 
-One file per public symbol in `test/`, named `test_{symbol_name}.py`. Always `import filters as f` for building test filter chains, and `import filters_pydantic as fp` for the package under test.
+One file per public symbol in `test/`, named `test_{symbol_name}.py`. Always `import filters as f` for building test filter chains, and import specific symbols directly from `filters_pydantic` (e.g. `from filters_pydantic import FilterField`).
 
 Test functions: `test_{symbol_name}_{scenario}`. Each test file needs a module-level docstring.
 

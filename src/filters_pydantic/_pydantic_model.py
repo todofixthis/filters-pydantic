@@ -20,7 +20,10 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
 
     On success, returns a model instance. On failure, reports one error
     per ``pydantic.ValidationError`` entry, keyed by its dotted ``loc``
-    path (see docs/adr/002-pydanticmodel-error-translation.md).
+    path — see `ADR 002`_ for why this differs from ``FilterField``'s
+    single joined message.
+
+    .. _ADR 002: https://github.com/todofixthis/filters-pydantic/blob/main/docs/adr/002-pydanticmodel-error-translation.md
     """
 
     CODE_INVALID = "invalid"
@@ -36,6 +39,9 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
         """
         super().__init__()
         self.model = model
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.model.__name__})"
 
     def _apply(self, value: Any) -> Any:
         try:

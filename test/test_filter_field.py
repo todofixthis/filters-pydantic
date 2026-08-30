@@ -1,5 +1,7 @@
 """Tests for filters_pydantic.FilterField."""
 
+import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Optional
 
 import filters as f
@@ -16,13 +18,15 @@ class Person(BaseModel):
 
 
 def test_filter_field_pass_applies_chain() -> None:
-    """The filter chain, not pydantic, produces the field's final value."""
-    person = Person(name="  Phoenix  ", age=42)
+    """The chain's own transformation reaches the field — pydantic's plain
+    ``str`` schema has no such effect, so it must be the chain that produced
+    the stripped value.
+    """
 
-    # ``f.Unicode`` on its own doesn't strip whitespace; the point here is
-    # that the filter chain — not pydantic — produced the value.
-    assert person.name == "  Phoenix  "
-    assert person.age == 42
+    class Contact(BaseModel):
+        name: Annotated[str, FilterField(f.Unicode | f.Strip)]
+
+    assert Contact(name="  Phoenix  ").name == "Phoenix"
 
 
 def test_filter_field_pass_coerces_before_pydantic_validates() -> None:
@@ -49,15 +53,19 @@ def test_filter_field_pass_none_short_circuits_chain() -> None:
 
 
 def test_filter_field_pass_composes_with_field_default() -> None:
-    """``FilterField`` and ``pydantic.Field`` in the same ``Annotated`` slot
-    both apply — the field's default and its ``ge=0`` constraint still hold.
+    """A ``pydantic.Field`` constraint in the same ``Annotated`` slot still
+    applies after the chain runs, rejecting a value the chain alone would
+    accept — ``f.Min(0)`` only bounds below, so ``Field(le=10)`` is the one
+    stopping ``11``.
     """
 
     class Config(BaseModel):
-        retries: Annotated[int, FilterField(f.Int | f.Min(0)), Field(ge=0)] = 3
+        retries: Annotated[int, FilterField(f.Int | f.Min(0)), Field(le=10)] = 3
 
-    assert Config().retries == 3
     assert Config(retries=5).retries == 5
+
+    with pytest.raises(ValidationError):
+        Config(retries=11)
 
 
 def test_filter_field_fail_reports_single_filter_error() -> None:
@@ -73,14 +81,16 @@ def test_filter_field_fail_reports_single_filter_error() -> None:
 
 
 def test_filter_field_fail_reports_none_as_required_violation() -> None:
-    """``None`` reaching an ``f.Required`` chain is reported as a failure at
-    that field, not treated as a value to pass through.
+    """``None`` reaching an ``f.Required`` chain fails as the chain's own
+    ``value_error``, not pydantic's unrelated ``string_type`` rejection of
+    ``None`` for a plain ``str`` field.
     """
     with pytest.raises(ValidationError) as exc_info:
         Person.model_validate({"name": None, "age": 1})
 
     (error,) = exc_info.value.errors()
-    assert error["loc"] == ("name",)
+    assert error["type"] == "value_error"
+    assert "This value is required." in error["msg"]
 
 
 def test_filter_field_fail_joins_multiple_chain_errors() -> None:
@@ -107,6 +117,42 @@ def test_filter_field_fail_joins_multiple_chain_errors() -> None:
     assert "y: This value is required." in error["msg"]
 
 
+def test_filter_field_pass_str_names_the_chain() -> None:
+    """``str()`` names the wrapped chain, since the default object repr
+    pydantic shows in ``model_fields[...].metadata`` identifies nothing
+    about what actually validates the field.
+    """
+    field = FilterField(f.Required | f.Unicode | f.NotEmpty)
+
+    assert "Required" in str(field)
+    assert "NotEmpty" in str(field)
+
+
+def test_filter_field_fail_propagates_unexpected_exception() -> None:
+    """An exception raised inside a filter propagates as itself, rather than
+    being reported as a generic pydantic ``value_error``.
+    """
+
+    # phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
+    class Boom(f.BaseFilter):  # type: ignore[misc]
+        def _apply(self, value: object) -> object:
+            raise RuntimeError("boom")
+
+    class Ticket(BaseModel):
+        number: Annotated[int, FilterField(Boom())]
+
+    with pytest.raises(RuntimeError, match="boom"):
+        Ticket.model_validate({"number": 1})
+
+
+def test_filter_field_fail_rejects_none_chain_at_construction() -> None:
+    """A ``None`` filter chain is rejected when ``FilterField`` is built, not
+    left to crash the first time a field using it is validated.
+    """
+    with pytest.raises(TypeError, match="filter_chain"):
+        FilterField(None)
+
+
 def test_filter_field_fail_chain_output_mismatched_type_is_pydantic_error() -> None:
     """A chain output that doesn't satisfy the annotated type fails as a
     plain pydantic error, not as a ``value_error`` from the chain.
@@ -122,3 +168,36 @@ def test_filter_field_fail_chain_output_mismatched_type_is_pydantic_error() -> N
 
     (error,) = exc_info.value.errors()
     assert error["type"] != "value_error"
+
+
+def test_filter_field_pass_concurrent_validation_does_not_corrupt_other_calls() -> None:
+    """Two threads validating the same field's shared chain at once don't
+    clobber each other's result (ADR 005) — every valid input is still
+    accepted and every invalid input is still rejected, regardless of what
+    other threads are doing concurrently.
+    """
+
+    # phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
+    class SlowUnicode(f.BaseFilter):  # type: ignore[misc]
+        """Widens the race window so concurrent full_clean() calls overlap."""
+
+        def _apply(self, value: object) -> object:
+            time.sleep(0.005)
+            return self._filter(value, f.Unicode)
+
+    class Widget(BaseModel):
+        name: Annotated[str, FilterField(SlowUnicode() | f.NotEmpty)]
+
+    def validate(index: int) -> tuple[int, bool]:
+        value = "ok" if index % 2 == 0 else ""
+        try:
+            Widget(name=value)
+            return index, True
+        except ValidationError:
+            return index, False
+
+    with ThreadPoolExecutor(max_workers=40) as executor:
+        results = list(executor.map(validate, range(40)))
+
+    for index, passed in results:
+        assert passed == (index % 2 == 0), f"input {index} got the wrong result"

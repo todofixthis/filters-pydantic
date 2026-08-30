@@ -39,6 +39,41 @@ and does the actual validation::
 A value the chain rejects raises the model's usual ``pydantic.ValidationError``,
 with every filter error message for that field joined into one.
 
+A chain built inline like this is shared across every validation of that field,
+so ``FilterField`` serialises concurrent access to it with a lock (see
+`ADR 005 <https://github.com/todofixthis/filters-pydantic/blob/main/docs/adr/005-serialise-shared-filter-chains.md>`_).
+For an expensive chain (I/O, a slow computation) under concurrent load, or a chain
+you deliberately share across more than one field, pass a zero-argument callable
+instead — ``FilterField(lambda: f.Required | f.Unicode | f.NotEmpty)`` — so each
+validation resolves its own independent chain and skips the lock entirely.
+
+Validating a Model Inside a Filter Chain
+-----------------------------------------
+Going the other direction, wrap a pydantic model in ``PydanticModel`` to validate a
+value against it from *inside* a ``filters`` chain — e.g. nested inside a
+``FilterMapper`` or ``FilterRepeater``::
+
+   import filters as f
+   from pydantic import BaseModel
+
+   from filters_pydantic import PydanticModel
+
+
+   class Address(BaseModel):
+       postcode: str
+
+
+   schema = f.FilterMapper({"address": PydanticModel(Address)})
+   runner = f.FilterRunner(schema, {"address": {}})
+   runner.is_valid()
+   # False
+   runner.get_errors()
+   # {'address.postcode': [{'code': 'invalid', 'message': 'Field required'}]}
+
+Unlike ``FilterField``, which joins every chain error into one message,
+``PydanticModel`` reports each pydantic validation error individually, keyed by
+its dotted field path.
+
 See the `full documentation <https://phx-filters-pydantic.readthedocs.io/>`_ for
 more.
 
@@ -106,56 +141,9 @@ To build the documentation locally:
 
 Releases
 --------
-Steps to build releases are based on
-`Packaging Python Projects Tutorial <https://packaging.python.org/en/latest/tutorials/packaging-projects/>`_.
-
-.. important::
-
-   Make sure to build releases off of the ``main`` branch, and check that all changes
-   from ``develop`` have been merged before creating the release!
-
-1. Build the Project
-~~~~~~~~~~~~~~~~~~~~
-#. Delete artefacts from previous builds, if applicable::
-
-    rm dist/*
-
-#. Run the build::
-
-    uv build
-
-#. The build artefacts will be located in the ``dist`` directory at the top level of the
-   project.
-
-2. Upload to PyPI
-~~~~~~~~~~~~~~~~~
-#. `Create a PyPI API token <https://pypi.org/manage/account/token/>`_ (you only have to
-   do this once).
-#. Increment the version number in ``pyproject.toml``.
-#. Upload build artefacts to PyPI::
-
-    uv publish
-
-3. Create GitHub Release
-~~~~~~~~~~~~~~~~~~~~~~~~
-#. Create a tag and push to GitHub::
-
-      git tag <version>
-      git push <version>
-
-   ``<version>`` must match the updated version number in ``pyproject.toml``.
-
-#. Go to the `Releases page for the repo`_.
-#. Click ``Draft a new release``.
-#. Select the tag that you created in step 1.
-#. Specify the title of the release (e.g., ``Pydantic Filters v1.2.3``).
-#. Write a description for the release.  Make sure to include:
-   - Credit for code contributed by community members.
-   - Significant functionality that was added/changed/removed.
-   - Any backwards-incompatible changes and/or migration instructions.
-   - SHA256 hashes of the build artefacts.
-#. GPG-sign the description for the release (ASCII-armoured).
-#. Attach the build artefacts to the release.
-#. Click ``Publish release``.
-
-.. _Releases page for the repo: https://github.com/todofixthis/filters-pydantic/releases
+Releases are cut from a ``release/<version>`` branch off ``main``, merged via pull
+request, then built, GPG-signed, tagged, and published to `PyPI
+<https://pypi.org/project/phx-filters-pydantic/>`_ and the `GitHub Releases page
+<https://github.com/todofixthis/filters-pydantic/releases>`_. See
+``.agents/skills/release/SKILL.md`` for the full, current procedure — that file is
+the source of truth; this section only summarises it.

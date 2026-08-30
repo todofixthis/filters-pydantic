@@ -7,9 +7,10 @@ description: Use when writing or debugging phx-filters integrations in this proj
 
 This skill covers only what's non-obvious about wiring `phx-filters` chains
 into pydantic models in this project. For chain composition itself (`|`,
-`FilterMapper`, `FilterRepeater`, ordering conventions), read `filters`'
-own source, or its `writing_filters`/`complex_filters` docs if the package is
-installed in the venv (`.venv/lib/*/site-packages/filters/`).
+`FilterMapper`, `FilterRepeater`, ordering conventions), read the installed
+package's source (`.venv/lib/*/site-packages/filters/` — it ships no
+prose docs) or its `writing_filters`/`complex_filters` guides at
+<https://filters.readthedocs.io/>.
 
 ## Attaching a chain to a field
 

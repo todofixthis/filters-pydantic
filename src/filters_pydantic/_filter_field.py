@@ -1,5 +1,6 @@
 """Applies a phx-filters chain to a pydantic model field."""
 
+import threading
 from typing import Any
 
 import filters as f
@@ -28,8 +29,28 @@ class FilterField:
         Args:
             filter_chain: Applied to the incoming value before pydantic
                 validates it against the field's annotated type.
+
+        Raises:
+            TypeError: If ``filter_chain`` is ``None`` — a valid value for
+                ``FilterCompatible`` elsewhere in phx-filters (e.g. an
+                unfiltered ``FilterMapper`` key), but never a sensible chain
+                for a field to run.
         """
+        if filter_chain is None:
+            raise TypeError("filter_chain must not be None")
         self.filter_chain = filter_chain
+
+        # A pre-built chain instance is shared across every validation of
+        # this field; phx-filters mutates it in place to route errors, so
+        # concurrent validations must be serialised (ADR 005). A callable or
+        # filter class already resolves an independent instance per call and
+        # needs no lock.
+        self._lock = (
+            threading.RLock() if isinstance(filter_chain, f.BaseFilter) else None
+        )
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.filter_chain})"
 
     def __get_pydantic_core_schema__(
         self,
@@ -46,10 +67,29 @@ class FilterField:
 
         Returns:
             The chain's cleaned value.
+
+        Raises:
+            ValueError: If the chain rejects ``value`` as invalid.
+            Exception: Whatever a filter itself raised, if the failure was
+                an unexpected exception rather than a validation rejection —
+                ``BaseFilter.apply`` catches every exception internally, so
+                without this it would otherwise be misreported as a generic
+                ``value_error`` with the real cause discarded.
         """
-        runner = f.FilterRunner(self.filter_chain, value)
+        if self._lock is None:
+            return self._apply_filter_chain(value)
+
+        with self._lock:
+            return self._apply_filter_chain(value)
+
+    def _apply_filter_chain(self, value: Any) -> Any:
+        runner = f.FilterRunner(self.filter_chain, value, capture_exc_info=True)
         if runner.is_valid():
             return runner.cleaned_data
+
+        if runner.has_exceptions:
+            _, exc, tb = runner.exc_info[0]
+            raise exc.with_traceback(tb)
 
         messages = [
             f"{key}: {message['message']}" if key else message["message"]
