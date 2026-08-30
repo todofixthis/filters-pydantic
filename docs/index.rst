@@ -75,6 +75,17 @@ Unlike ``FilterField``, which joins every chain error into one message,
 ``PydanticModel`` reports each pydantic validation error individually, keyed by
 its dotted field path.
 
+``PydanticModel`` is also registered as a `filters extension
+<https://filters.readthedocs.io/en/latest/extensions.html>`_, so it's reachable as
+``f.ext.PydanticModel`` without importing this package directly::
+
+   import filters as f
+
+
+   schema = f.FilterMapper({"address": f.ext.PydanticModel(Address)})
+
+``FilterField`` isn't a ``filters.base.BaseFilter``, so it stays a plain import.
+
 Requirements
 ------------
 Pydantic Filters is known to be compatible with the following Python versions:

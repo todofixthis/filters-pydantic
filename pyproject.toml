@@ -32,6 +32,9 @@ dependencies = [
     "pydantic>=2,<3",
 ]
 
+[project.entry-points."filters.extensions"]
+PydanticModel = "filters_pydantic:PydanticModel"
+
 [project.urls]
 Repository = "https://github.com/todofixthis/filters-pydantic"
 Documentation = "https://phx-filters-pydantic.readthedocs.io/"
