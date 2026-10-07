@@ -27,15 +27,15 @@ uv run ruff check                                      # lint
 uv run make -C docs clean && uv run make -C docs html  # build docs
 ```
 
-The phx plugin's ADR tool, for use outside Claude Code, where the [`writing-adrs` skill](https://github.com/todofixthis/phx-claude-siat/blob/0725567cec6bab6a227c2a3d569e64c226c33a4e/skills/writing-adrs/SKILL.md) states the conventions. Keep every ref here in step with the `adr` CI job; a stale-index failure in CI that the session's own tool can't reproduce means the two releases differ — compare the installed plugin's version with the pinned one, then bump every ref if the installed one is newer, else update the plugin.
+The phx plugin's ADR tool, for use outside Claude Code, where the [`writing-adrs` skill](https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/SKILL.md) states the conventions. Renovate bumps these pins and the `adr` CI job's together. A stale-index failure in CI that the session's own tool can't reproduce means the two releases differ — compare the installed plugin's version with the pinned one: if the installed one is newer, merge Renovate's pending bump (or bump every pin by hand, version comments included, to the tag's commit — the `<tag>^{}` line of `git ls-remote --tags`, not the tag object), else update the plugin.
 
 ```bash
 # Scaffold the next ADR
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 8.1.0
 # Regenerate docs/adr/INDEX.md
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr index
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr index # 8.1.0
 # Validate, as CI does
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr check
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr check # 8.1.0
 ```
 
 ## Architecture

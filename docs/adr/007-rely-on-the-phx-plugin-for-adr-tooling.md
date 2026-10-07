@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-10-07
-scope: [.claude/settings.json, .github/workflows/build.yml, AGENTS.md, docs/adr/, pyproject.toml]
+scope: [.claude/settings.json, .github/workflows/build.yml, AGENTS.md, docs/adr/, pyproject.toml, renovate.json]
 summary: Index, validate and look up ADRs with the phx writing-adrs tool, through the plugin's hooks in sessions and its phx-adr entry point at a pinned release in CI, not a repo-local generator, pre-commit hook or vendored copy.
 revisit-when: A phx plugin release imposes an ADR convention the maintainer rejects; ADRs here are authored in a harness other than Claude Code; the phx plugin drops its ADR tooling.
 ---
@@ -53,7 +53,8 @@ Delete the repository tooling. Sessions get the plugin's hooks; a CI job runs
 
 **Cons:** No local check blocks a commit; a fault from outside Claude Code is caught
 only once pushed. Outside Claude Code nothing allocates a number or regenerates the
-index, so the author runs `phx-adr` by hand. The pinned ref has to be bumped by hand.
+index, so the author runs `phx-adr` by hand. The pin needs bumping with each plugin
+release.
 **Risks:** Sessions load whatever plugin release is installed, not the pinned one. A
 release that changes the index format leaves CI reporting the index stale right after
 a session regenerates it, until the pin catches up.
@@ -84,14 +85,14 @@ would drop that check, leaving ADRs unchecked for any commit made outside Claude
 - `scripts/` (the ported generator, parser and their tests) and `.autohooks/adr_index.py`
   are removed, along with the `adr_index` pre-commit hook and `scripts` from pytest's
   `testpaths`. ADR 004's `scope` drops `scripts/`, which no longer exists.
-- The CI `adr` job and `AGENTS.md`'s `phx-adr` commands pin the 8.1.0 release's commit.
-  Bump both when sessions move to a new plugin release, and fix whatever the new release
-  reports in the same change.
+- The CI `adr` job and `AGENTS.md`'s `phx-adr` commands pin a release's commit, with
+  its version in a trailing comment. A regex manager in `renovate.json` bumps every pin
+  in one pull request; fix whatever the new release reports in that same pull request.
 - The plugin is Claude Code's, so an agent in another harness gets no session hooks, and
   meets the conventions only through `AGENTS.md`, the skill and CI.
 
 [`.claude/settings.json`]: ../../.claude/settings.json
 [ADR 003]: 003-adopt-scope-validating-adr-generator.md
-[`adr.py`]: https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/adr.py
+[`adr.py`]: https://github.com/todofixthis/phx-claude-siat/blob/main/skills/writing-adrs/adr.py
 [phx-claude-siat]: https://github.com/todofixthis/phx-claude-siat
-[`phx:writing-adrs`]: https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/SKILL.md
+[`phx:writing-adrs`]: https://github.com/todofixthis/phx-claude-siat/blob/main/skills/writing-adrs/SKILL.md
