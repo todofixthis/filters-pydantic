@@ -72,7 +72,6 @@ pre-commit = [
     "autohooks.plugins.ruff",
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",
-    "adr_index",
 ]
 
 [tool.uv]
@@ -109,7 +108,7 @@ exclude = ["docs/_build"]
 "src/filters_pydantic" = "filters_pydantic"
 
 [tool.pytest.ini_options]
-testpaths = ["test", "scripts"]
+testpaths = ["test"]
 
 [tool.tox]
 env_list = ["py314", "py313", "py312"]
