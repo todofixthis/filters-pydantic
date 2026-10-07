@@ -7,7 +7,7 @@ re-litigate them.
 
 ## Architecture Decision Records
 
-When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `writing-adrs` skill for the format and conventions. ADRs live in `docs/adr/`. Before writing, run `ls docs/adr/` to find the highest existing number and increment it.
+When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill (from the phx plugin, which `.claude/settings.json` enables) for the format, conventions and tooling: its `adr.py` allocates the number, generates `docs/adr/INDEX.md` and validates the corpus. Outside Claude Code, run the same tool as `phx-adr` (see Commands). Don't hand-edit the index or add a repo-local ADR script (ADR 007). ADRs live in `docs/adr/`.
 
 If you find yourself about to establish a new cross-cutting pattern (something that will affect multiple domains or files, e.g. a testing convention, a shared utility, an error-handling approach), stop and write an ADR first even if the immediate task feels local. A pattern adopted once becomes the template for everything that follows.
 
@@ -25,6 +25,17 @@ uv run pytest --collect-only                           # verify test count (note
 uv run mypy src test                                   # type-check
 uv run ruff check                                      # lint
 uv run make -C docs clean && uv run make -C docs html  # build docs
+```
+
+The phx plugin's ADR tool, for use outside Claude Code, where the [`writing-adrs` skill](https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/SKILL.md) states the conventions. Renovate bumps these pins and the `adr` CI job's together. A stale-index failure in CI that the session's own tool can't reproduce means the two releases differ — compare the installed plugin's version with the pinned one: if the installed one is newer, merge Renovate's pending bump (or bump every pin by hand, version comments included, to the tag's commit — the `<tag>^{}` line of `git ls-remote --tags`, not the tag object), else update the plugin.
+
+```bash
+# Scaffold the next ADR
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 8.1.0
+# Regenerate docs/adr/INDEX.md
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr index # 8.1.0
+# Validate, as CI does
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr check # 8.1.0
 ```
 
 ## Architecture

@@ -1,9 +1,10 @@
 ---
-status: Accepted
+status: Superseded
 date: 2026-08-29
 scope: [docs/adr/, scripts/adr/, scripts/frontmatter.py, .autohooks/adr_index.py, pyproject.toml]
 summary: Replace the PyYAML-based, tags-only ADR index generator with the phx:writing-adrs skill's stdlib-only, scope-validating reference implementation from todofixthis/phx-claude-siat.
 revisit-when: scripts/adr/generate_index.py or scripts/frontmatter.py changes upstream in phx-claude-siat.
+superseded-by: 7
 ---
 
 # 003: Adopt Scope-Validating ADR Generator

@@ -1,7 +1,7 @@
 ---
 status: Archived
 date: 2026-08-29
-scope: [test/, scripts/]
+scope: [test/]
 summary: Every test function carries a one-sentence docstring stating the scenario under test — what must hold, not a restatement of the function name or call.
 revisit-when: Generic or restating docstrings recur across reviews, i.e. the convention alone isn't holding, and presence-only enforcement (e.g. ruff's pydocstyle "D" rules) is worth adding.
 archived-because: A `.claude/rules/testing.md` rule with `paths` frontmatter loads this convention whenever an agent reads or edits an existing matching test file; a brand-new file's first `Write` doesn't trigger it, and that gap is accepted rather than backstopped.
