@@ -27,7 +27,9 @@ uv run ruff check                                      # lint
 uv run make -C docs clean && uv run make -C docs html  # build docs
 ```
 
-The phx plugin's ADR tool, for use outside Claude Code, where the [`writing-adrs` skill](https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/SKILL.md) states the conventions. Renovate bumps these pins and the `adr` CI job's together. A stale-index failure in CI that the session's own tool can't reproduce means the two releases differ — compare the installed plugin's version with the pinned one: if the installed one is newer, merge Renovate's pending bump (or bump every pin by hand, version comments included, to the tag's commit — the `<tag>^{}` line of `git ls-remote --tags`, not the tag object), else update the plugin.
+The phx plugin's ADR tool, for use outside Claude Code, where the [`writing-adrs` skill](https://github.com/todofixthis/phx-claude-siat/blob/8.1.0/skills/writing-adrs/SKILL.md) states the conventions. Renovate bumps these pins and the `adr` CI job's together, matching each on its trailing `# X.Y.Z` comment — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
+
+If CI reports a stale index the session's own tool can't reproduce, the installed plugin and the pinned release differ. Compare the two versions: if the installed one is newer, merge Renovate's pending bump, or bump by hand: each pin to the release's commit, and its comment and the skill link above to the release's version. The commit is the `refs/tags/<version>^{}` line of `git ls-remote --tags https://github.com/todofixthis/phx-claude-siat`, not the tag object above it. Otherwise update the plugin.
 
 ```bash
 # Scaffold the next ADR
