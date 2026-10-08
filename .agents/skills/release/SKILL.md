@@ -33,7 +33,7 @@ Based on the changes, recommend a semver bump:
 - **minor** — new features or behaviour changes, fully backwards-compatible
 - **patch** — bug fixes only
 
-**Stop here. Get explicit confirmation of the release notes and version number before continuing.**
+**Stop here. Get explicit confirmation of the release notes and version number before continuing.** Once the version is confirmed, add or drop the `[!CAUTION]` block to match it (see _Writing Release Notes_).
 
 ---
 
@@ -154,6 +154,11 @@ gh issue close <number> --comment "Implemented in [v<version>](https://github.co
 ### Structure
 ```markdown
 # Pydantic Filters v<version>
+
+> [!CAUTION]
+> **Alpha software — here be dragons**
+> This is an early release. APIs, configuration formats, and CLI flags may change without notice in future versions. Bugs and crashes are possible.
+
 <one-sentence summary of the release character>
 
 > [!WARNING]
@@ -177,7 +182,7 @@ gh issue close <number> --comment "Implemented in [v<version>](https://github.co
 # SHA256 Checksums
 ```
 
-Only include the `[!WARNING]` block if there are breaking changes. Omit any section that has no entries.
+Lead every pre-release's notes with the `[!CAUTION]` block, verbatim, directly under the title: a pre-release is any `0.y.z` version, or one with a pre-release segment (`4.0.0a1`, `2.0.0rc1`, `1.1.0.dev1`). Omit it from every other release. Only include the `[!WARNING]` block if there are breaking changes. Omit any section that has no entries.
 
 ### Grouping related items
 - **2–4 related bullets:** nest as a hierarchical sublist under the parent bullet
