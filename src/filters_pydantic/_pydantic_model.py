@@ -54,4 +54,6 @@ class PydanticModel[T_model: pydantic.BaseModel](BaseFilter[T_model]):
                     sub_key=key,
                     template_vars={"message": error["msg"]},
                 )
-            return None
+            # phx-filters expects `_apply` to return `None` for a rejected
+            # value; todofixthis/filters#121 makes rejection raise instead.
+            return None  # type: ignore[return-value]

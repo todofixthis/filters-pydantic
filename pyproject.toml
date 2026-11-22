@@ -86,13 +86,6 @@ system-certs = true
 [tool.mypy]
 strict = true
 
-# A rejected value makes `PydanticModel._apply` return `None` from a
-# non-Optional `_apply`, as phx-filters expects. Re-enable the code once
-# todofixthis/filters#121 makes rejection raise instead.
-[[tool.mypy.overrides]]
-module = ["filters_pydantic._pydantic_model"]
-disable_error_code = ["return-value"]
-
 [tool.hatch.build.targets.sdist]
 include = [
     "src/filters_pydantic",
