@@ -28,7 +28,7 @@ classifiers = [
     "Topic :: Text Processing :: Filters",
 ]
 dependencies = [
-    "phx-filters>=3,<4",
+    "phx-filters>=4.0.0a2,<5",
     "pydantic>=2,<3",
 ]
 
@@ -86,10 +86,12 @@ system-certs = true
 [tool.mypy]
 strict = true
 
+# A rejected value makes `PydanticModel._apply` return `None` from a
+# non-Optional `_apply`, as phx-filters expects. Re-enable the code once
+# todofixthis/filters#121 makes rejection raise instead.
 [[tool.mypy.overrides]]
-# phx-filters ships no py.typed marker.
-module = "filters.*"
-ignore_missing_imports = true
+module = ["filters_pydantic._pydantic_model"]
+disable_error_code = ["return-value"]
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -109,6 +111,12 @@ exclude = ["docs/_build"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.ruff.lint]
+# phx-filters' BaseFilter declares `templates` as an instance attribute, so a
+# subclass annotating it `ClassVar`, as RUF012 asks, fails mypy's override
+# check.
+ignore = ["RUF012"]
 
 [tool.tox]
 env_list = ["py314", "py313", "py312"]

@@ -2,7 +2,7 @@
 
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Annotated, Optional
+from typing import Annotated
 
 import filters as f
 import pytest
@@ -14,7 +14,7 @@ from filters_pydantic import FilterField
 class Person(BaseModel):
     name: Annotated[str, FilterField(f.Required | f.Unicode | f.NotEmpty)]
     age: Annotated[int, FilterField(f.Required | f.Int | f.Min(0))]
-    nickname: Annotated[Optional[str], FilterField(f.Unicode)] = None
+    nickname: Annotated[str | None, FilterField(f.Unicode)] = None
 
 
 def test_filter_field_pass_applies_chain() -> None:
@@ -133,8 +133,7 @@ def test_filter_field_fail_propagates_unexpected_exception() -> None:
     being reported as a generic pydantic ``value_error``.
     """
 
-    # phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
-    class Boom(f.BaseFilter):  # type: ignore[misc]
+    class Boom(f.BaseFilter[object]):
         def _apply(self, value: object) -> object:
             raise RuntimeError("boom")
 
@@ -177,8 +176,7 @@ def test_filter_field_pass_concurrent_validation_does_not_corrupt_other_calls() 
     other threads are doing concurrently.
     """
 
-    # phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
-    class SlowUnicode(f.BaseFilter):  # type: ignore[misc]
+    class SlowUnicode(f.BaseFilter[object]):
         """Widens the race window so concurrent full_clean() calls overlap."""
 
         def _apply(self, value: object) -> object:

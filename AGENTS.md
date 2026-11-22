@@ -42,7 +42,7 @@ uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e
 
 ## Architecture
 
-Thin integration layer between [pydantic](https://docs.pydantic.dev/) and [phx-filters](https://github.com/todofixthis/filters). `phx-filters` chains have no generic typing, so `FilterField` is attached as `typing.Annotated` metadata alongside an ordinary type hint — the annotation tells pydantic (and static type checkers) what shape to expect; the filter chain does the actual validation. Source in `src/filters_pydantic/`.
+Thin integration layer between [pydantic](https://docs.pydantic.dev/) and [phx-filters](https://github.com/todofixthis/filters). pydantic can't read a field's type from a filter chain, so `FilterField` is attached as `typing.Annotated` metadata alongside an ordinary type hint — the annotation tells pydantic (and static type checkers) what shape to expect; the filter chain does the actual validation. Source in `src/filters_pydantic/`.
 
 - Explicit imports with `__all__` throughout — no wildcard imports
 - Forward-reference type hints must use `typing.Optional`/`typing.Union` (not `X | None`) — `"ClassName" | None` raises a Python runtime `TypeError` (`str.__or__` unsupported) that Sphinx cannot recover from; this is not fixed in Sphinx 9 — add `# Use Optional for Sphinx compat` inline
