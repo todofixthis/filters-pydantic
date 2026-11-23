@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier
+_commit: 1.3.2
+_src_path: https://github.com/todofixthis/cookiecutter-py.git
+author_email: phx@phx.nz
+author_name: Phoenix Zerin
+copyright_holder: Phoenix Zerin
+copyright_year: 2024
+docs_site: true
+github_project_name: filters-pydantic
+github_username: todofixthis
+package_name: filters_pydantic
+project_name: Pydantic Filters
+project_short_description: Pydantic integration for Filters
+pypi_project_name: phx-filters-pydantic
+python_version: '3.14'
+readthedocs_slug: phx-filters-pydantic
+version: 0.1.0
