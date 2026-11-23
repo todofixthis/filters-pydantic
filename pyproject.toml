@@ -28,7 +28,7 @@ classifiers = [
     "Topic :: Text Processing :: Filters",
 ]
 dependencies = [
-    "phx-filters>=3,<4",
+    "phx-filters>=4.0.0a2,<5",
     "pydantic>=2,<3",
 ]
 
@@ -86,11 +86,6 @@ system-certs = true
 [tool.mypy]
 strict = true
 
-[[tool.mypy.overrides]]
-# phx-filters ships no py.typed marker.
-module = "filters.*"
-ignore_missing_imports = true
-
 [tool.hatch.build.targets.sdist]
 include = [
     "src/filters_pydantic",
@@ -109,6 +104,12 @@ exclude = ["docs/_build"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.ruff.lint]
+# phx-filters' BaseFilter declares `templates` as an instance attribute, so a
+# subclass annotating it `ClassVar`, as RUF012 asks, fails mypy's override
+# check.
+ignore = ["RUF012"]
 
 [tool.tox]
 env_list = ["py314", "py313", "py312"]

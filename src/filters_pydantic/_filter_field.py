@@ -13,10 +13,10 @@ __all__ = ["FilterField"]
 class FilterField:
     """Runs a filters chain as a pydantic field's validation logic.
 
-    ``phx-filters`` chains have no generic typing, so attach ``FilterField``
-    as ``Annotated`` metadata alongside an ordinary type hint — the hint
-    tells pydantic (and static type checkers) what to expect; the chain
-    does the actual validation:
+    pydantic can't read a field's type from a filter chain, so attach
+    ``FilterField`` as ``Annotated`` metadata alongside an ordinary type
+    hint — the hint tells pydantic (and static type checkers) what to
+    expect; the chain does the actual validation:
 
         Name = Annotated[str, FilterField(f.Required | f.Unicode | f.NotEmpty)]
 
