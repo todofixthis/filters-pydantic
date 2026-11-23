@@ -3,7 +3,7 @@ status: Accepted
 date: 2026-11-23
 scope: [.agents/rules/template-owned.md, .agents/rules/testing.md, .autohooks/, .claude/settings.json, .copier-answers.yml, .github/workflows/build.yml, AGENTS.md, docs/adr/, pyproject.toml, renovate.json, test/]
 summary: This project follows the copier template todofixthis/cookiecutter-py, which writes and owns the files that .agents/rules/template-owned.md lists, and defers to its decisions in them; cookiecutter-py ADR 019 replaces this project's ADR 007 (rely on the phx plugin for ADR tooling, never a repo-local generator, vendored copy or pre-commit hook), ADR 018 there sets the phx-adr pins, and the templated .agents/rules/testing.md (ADR 010 there) replaces this project's ADR 004 (a one-line docstring on every test function); diverging from a template decision on purpose needs an ADR here naming the cookiecutter-py ADR it departs from.
-revisit-when: This project stops taking template updates; the template supersedes or renumbers one of the ADRs named here; ADRs here are routinely authored in a harness other than Claude Code.
+revisit-when: This project stops taking template updates; the template supersedes or renumbers one of the ADRs named here; ADRs here are routinely authored in a harness other than Claude Code; generic or restating test docstrings recur across reviews, so presence-only enforcement such as ruff's pydocstyle rules is worth adding.
 ---
 
 # 008: Defer to cookiecutter-py's Template Decisions
@@ -21,8 +21,8 @@ Two of this project's ADRs decide what the template now decides:
 
 - [ADR 007][] relies on the phx plugin for ADR tooling, with CI's
   `phx-adr` pinned to a release's commit. [cookiecutter-py ADR 019][]
-  decides the same, rejecting 007's repo-local and vendored alternatives
-  and a pre-commit hook besides, and [cookiecutter-py ADR 018][] sets the
+  decides the same, rejecting the same repo-local, vendored and
+  pre-commit-hook alternatives, and [cookiecutter-py ADR 018][] sets the
   pins in the `adrs` job and AGENTS.md. 007 names the CI job `adr`, which
   the template calls `adrs`.
 - [ADR 004][] requires a one-sentence docstring on every test function, and
@@ -31,8 +31,8 @@ Two of this project's ADRs decide what the template now decides:
   one line, no longer cites 004, and changes with any template release.
 
 The template also brings the `develop` → `main` branch model and its
-release skill, replacing this project's single `main` branch with releases
-tagged from it.
+release skill, replacing this project's documented model of a single `main`
+branch with releases tagged from it.
 
 ## Options
 
@@ -57,9 +57,10 @@ adopted.
 
 Option 2. The template owns these files, so it owns the decisions about
 them, and its ADRs and rules record 004's and 007's decisions; a second
-copy here can only fall behind. One of 019's triggers, ADRs routinely
-authored outside Claude Code, can only be seen from inside this project,
-so this ADR's `revisit-when` carries it.
+copy here can only fall behind. Two triggers can only be seen from inside
+this project, 019's for ADRs routinely authored outside Claude Code and
+004's for test docstrings that restate their tests, so this ADR's
+`revisit-when` carries both.
 
 ## Consequences
 
