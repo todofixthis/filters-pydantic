@@ -148,11 +148,7 @@ To build the documentation locally:
 
 #. Build the documentation::
 
-<<<<<<< before updating
-    make html
-=======
     uv run make html SPHINXOPTS=-W
->>>>>>> after updating
 
 Releases
 --------
