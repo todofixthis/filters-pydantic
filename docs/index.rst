@@ -79,6 +79,15 @@ A callable that uses an existing filter or chain anywhere, such as
 ``lambda: Text | f.MaxLength(50)`` or ``lambda: f.Required | Text``, is unsafe for
 the same reason.
 
+Sharing a filter with a ``FilterMapper`` or ``FilterRepeater`` also mislabels its
+errors, even on one thread. Once a ``FilterMapper`` holds a filter, that filter's
+errors carry the mapper's key wherever else it runs, so a ``title`` field using a
+chain that a ``FilterMapper`` also holds under ``name`` reports ``name: Non-empty
+value expected.`` A ``FilterRepeater`` does the same once it has run, with the
+last list index it processed, such as ``1:``. A callable that builds every filter
+avoids this too (see
+`todofixthis/filters#175 <https://github.com/todofixthis/filters/issues/175>`_).
+
 Validating a Model Inside a Filter Chain
 -----------------------------------------
 Going the other direction, wrap a pydantic model in ``PydanticModel`` to validate a

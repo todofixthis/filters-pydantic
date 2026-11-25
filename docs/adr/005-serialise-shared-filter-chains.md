@@ -264,10 +264,11 @@ the residual case.
   doesn't cover. It says the callable must build every filter on each call, since
   one returning or extending an existing chain shares its filters just the same.
   It also says reusing one `Annotated` alias is safe, since its uses share one
-  `FilterField` and so one lock. Leaving the shared case to documentation carries
-  the weakness Option 1 was rejected for, since `|` makes sharing easy to do
-  without noticing. It is accepted only as an interim measure until
-  todofixthis/filters#175 lands.
+  `FilterField` and so one lock, and that a filter a `FilterMapper` or
+  `FilterRepeater` also holds reports its errors under the holder's key. Leaving
+  the shared case to documentation carries the weakness Option 1 was rejected for,
+  since `|` makes sharing easy to do without noticing. It is accepted only as an
+  interim measure until todofixthis/filters#175 lands.
 - This is the first and only synchronisation primitive in the package; nothing
   else here holds a lock.
 
