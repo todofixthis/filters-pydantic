@@ -43,8 +43,9 @@ class FilterField:
         # A pre-built chain instance is shared across every validation of
         # this field; phx-filters mutates it in place to route errors, so
         # concurrent validations must be serialised (ADR 005). A callable or
-        # filter class already resolves an independent instance per call and
-        # needs no lock.
+        # filter class resolves a new instance per call and needs no lock,
+        # provided it builds every filter itself: one that returns or extends
+        # an existing chain shares that chain's filters, unlocked.
         self._lock = (
             threading.RLock() if isinstance(filter_chain, f.BaseFilter) else None
         )

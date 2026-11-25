@@ -2,8 +2,8 @@
 status: Accepted
 date: 2026-08-30
 scope: [src/filters_pydantic/_filter_field.py, README.rst, docs/index.rst]
-summary: FilterField serialises access to a shared, pre-built filter-chain instance with a per-field lock — safe only where the chain is exclusively owned by that field — rather than requiring callers to pass a factory for concurrent safety.
-revisit-when: Profiling shows the lock is a real throughput bottleneck under concurrent load, or free-threaded Python (3.13t/3.14t, already admitted by this project's `requires-python`) changes the interleaving this fix relies on.
+summary: FilterField serialises access to a shared, pre-built filter-chain instance with a per-field lock — safe only where no filter instance in the chain is used outside that field, including through `|` or nesting in another filter — rather than requiring callers to pass a factory, which is safe only where it builds every filter on each call.
+revisit-when: Profiling shows the lock is a real throughput bottleneck under concurrent load; free-threaded Python (3.13t/3.14t, already admitted by this project's `requires-python`) changes the interleaving this fix relies on; phx-filters copies filters when chains combine or nest, which retires the README's composition warning but not the lock; phx-filters keeps per-run state (`parent`, `key`, `handler`, `_has_errors`) off filter instances, in `apply` and `FilterRunner` alike, which retires the lock; or a wrong validation result is traced to a filter instance shared outside one `FilterField`.
 ---
 
 # 005: Serialise Shared Filter Chains
@@ -13,11 +13,12 @@ revisit-when: Profiling shows the lock is a real throughput bottleneck under con
 [`FilterField`][] stores whatever `filter_chain` it's constructed with and passes
 it, unchanged, to a fresh [`FilterRunner`][] on every validation. When that
 argument is a pre-built chain instance — `FilterField(f.Required | f.Unicode |
-f.NotEmpty)`, the only form shown anywhere in this project's own docs and tests —
-every validation of that field, across every instance of the model, shares the
-same [`BaseFilter`][] object.
+f.NotEmpty)`, the only form this project's docs and tests showed when this was
+decided — every validation of that field, across every instance of the model,
+shares the same [`BaseFilter`][] object.
 
-`FilterRunner.full_clean` mutates that shared object to route errors:
+`FilterRunner.full_clean` mutates that shared object to route errors (simplified;
+phx-filters 4 moves this into `_full_clean`, with the same effect):
 
 ```python
 def full_clean(self):
@@ -66,6 +67,11 @@ before the failing one: [`FilterChain`][]`._apply` stops at the first filter tha
 records an error, so a slow filter placed after a failure never gets the chance to
 widen the race window.) `BaseFilter._has_errors` is subject to the identical race,
 being reset at the start of every `apply()` call on the same shared instance.
+Nor does the damage end with the race: two overlapping runners restore in the
+wrong order, leaving the chain holding the first runner's finished handler, so any
+chain that later nests it accepts invalid input even on one thread. A per-field
+lock stops one field's runners overlapping, but not a chain shared beyond the
+field.
 
 This isn't a contrived scenario: pydantic validation runs from request-handling
 code, and frameworks built on it commonly run synchronous validation in a thread
@@ -74,10 +80,10 @@ the same shared instance from multiple threads at once.
 
 phx-filters' own `FilterCompatible` type already includes `Callable[[], BaseFilter]`
 — a zero-argument factory that `resolve_filter` invokes fresh on every call, which
-already sidesteps this entirely; `FilterField(lambda: f.Required | f.Unicode |
-f.NotEmpty)` is unaffected by it. But `resolve_filter`'s other branch — an
-already-built instance — is returned as-is, which is what every current usage
-passes.
+sidesteps this where the factory builds every filter itself;
+`FilterField(lambda: f.Required | f.Unicode | f.NotEmpty)` is unaffected by it.
+But `resolve_filter`'s other branch — an already-built instance — is returned
+as-is, which is what every usage passed when this was decided.
 
 ### A chain instance shared across fields is the same hazard, not a narrower one
 
@@ -106,10 +112,34 @@ observes the clobber from `chain_b`'s construction. Concurrently, it doesn't:
 shared `BASE`, and the reassign-then-use step of one can interleave with the
 other's, corrupting `BASE`'s parent for whichever thread reads it second.
 
-A lock keyed to one `FilterField` is therefore safe only when that field's chain,
-and everything nested in it, is not also reachable from any other field or
-concurrent caller. No test or doc in this project shares a chain, or a sub-chain,
-across more than one `FilterField`.
+`key`, which names the field an error is filed under, doesn't self-heal even
+sequentially: `resolve_filter` sets it only when the parent passes one, as
+`FilterMapper` and `FilterRepeater` do, and a plain chain never clears it. Merely
+constructing a `FilterMapper` around a filter, before or after the chain that also
+holds it, files that filter's errors under the mapper's key wherever else it runs,
+with one thread and the lock held.
+
+Extending a chain with `|` shares its filters without nesting it.
+`FilterChain.__or__` returns a shallow copy: the new chain gets its own list, but
+the list holds the original filter instances:
+
+```python
+Text = f.Unicode | f.Strip
+title = Text | f.MaxLength(50)     # holds Text's own Unicode and Strip
+body = Text | f.MaxLength(2000)    # holds the same two instances
+```
+
+`title` and `body` both reassign the shared filters' `parent` on every `apply()`,
+though neither chain contains the other. A factory is no escape from this:
+`lambda: Text | f.MaxLength(50)` builds a new chain on every call around filters
+that every call shares, and `lambda: f.Required | Text` nests one.
+
+A lock keyed to one `FilterField` is therefore safe only when no filter instance in
+that field's chain is also reachable from another field, caller or filter,
+whether directly, nested in another filter (a chain, `FilterMapper` or
+`FilterRepeater`), or through a chain combined with it by `|`. No test in this
+project shares a filter instance across more than one `FilterField`; the README and
+the docs index show one only as an example of the unsafe pattern.
 
 ## Options
 
@@ -120,10 +150,10 @@ concurrent validation, and recommend the factory form for anyone who needs it.
 
 **Pros:** No code or behavioural change — nothing to test or maintain beyond a
 paragraph of documentation.
-**Cons:** Leaves the default, only-documented construction pattern
-(`FilterField(f.Required | ...)`) silently unsafe; a caller has to already know
-about this specific hazard, in a library whose main audience is concurrent
-request-handling code, to avoid it.
+**Cons:** Leaves the default construction pattern, the only one documented when
+this was decided (`FilterField(f.Required | ...)`), silently unsafe; a caller has
+to already know about this specific hazard, in a library whose main audience is
+concurrent request-handling code, to avoid it.
 **Risks:** Silent data corruption under load is the worst class of bug to leave
 behind a documentation footnote — it passes every test that doesn't specifically
 provoke concurrency, and surfaces in production under exactly the load pattern
@@ -133,8 +163,8 @@ users deploy this library for.
 
 Keep accepting a pre-built instance unchanged, but hold an `RLock` around chain
 resolution and application whenever `filter_chain` is a `BaseFilter` instance
-(skipped entirely for a factory or class, which already gets an independent chain
-per call and needs no serialising).
+(skipped entirely for a factory or class, which gets a new top-level chain per
+call, independent wherever the factory builds every filter itself).
 
 **Pros:** Every current construction pattern keeps working unchanged — no caller
 needs to touch their code to become safe.
@@ -154,9 +184,13 @@ inherent to locking, not specific to this implementation.
 Keying the lock to the chain object itself (a `WeakKeyDictionary`) rather than to
 the `FilterField` would close the shared-chain-across-fields case too, at similar
 implementation cost. Rejected in favour of the simpler per-field lock: it still
-wouldn't close the nested-sub-chain case (a lock on `chain_a` and one on `chain_b`
-still don't serialise against each other over the `BASE` they share), so the
-residual gap doesn't shrink enough to justify a shared, weakref-keyed registry.
+wouldn't close the nested-sub-chain or `|`-extended cases (a lock on `chain_a` and
+one on `chain_b` still don't serialise against each other over the filters they
+share), so the residual gap doesn't shrink enough to justify a shared,
+weakref-keyed registry. One process-wide lock would close every route through
+`FilterField`, though not code running the chain outside it, and the cross-field
+deadlock named under Risks, but would serialise every `FilterField` validation in
+the process against every other.
 
 ### Option 3: Require a factory, reject a pre-built instance
 
@@ -166,31 +200,56 @@ Accept only a zero-argument callable or filter class in `__init__`, raising
 **Pros:** Makes the unsafe pattern impossible rather than merely discouraged;
 resolves the chain fresh every time via phx-filters' own existing mechanism, with
 no new code in this package, and closes the shared-chain-across-fields hazard too
-— a fresh instance is never shared with anything.
-**Cons:** Breaking change to the only construction pattern this project has ever
+— a chain the factory builds whole is never shared with anything. It can't stop a
+factory from embedding a shared filter instance, so the `|`-extended case stays
+open.
+**Cons:** Breaking change to the only construction pattern this project had
 documented — every existing example, in this repo and presumably in any adopter's
 code, needs rewriting to wrap its chain in a `lambda`.
 **Risks:** None to correctness; the cost is entirely migration effort landing on
 every current caller for a defect most will never have hit.
 
+### Option 4: Lock per field, and deep-copy a pre-built chain at construction
+
+Option 2, plus `FilterField.__init__` taking a `copy.deepcopy` of a pre-built
+chain, so the field owns every filter instance in it and its lock covers every
+sharing route through `FilterField`.
+
+**Pros:** Closes the residual gap at a one-off construction cost, with no change to
+how callers declare fields.
+**Cons:** Silently copies state a filter may mean to share, such as a connection or
+a cache. Treats in this package a phx-filters defect that every phx-filters caller
+sharing a filter instance across threads meets too.
+**Risks:** `deepcopy` raises on a filter holding something it can't copy, such as a
+lock or an open connection, and does so when the model class is defined, so a
+model that imported cleanly before fails to import.
+
 ## Decision
 
-Adopt Option 2. Every example this project documents constructs `FilterField` from
-a pre-built chain, and shipping 1.0 with that exact pattern silently unsafe is a
-worse outcome than a bottleneck under load a caller can opt out of. Locking closes
+Adopt Option 2. Every example this project documented when this was decided
+constructed `FilterField` from a pre-built chain, and shipping 1.0 with that exact
+pattern silently unsafe is a worse outcome than a bottleneck under load a caller
+can opt out of. Locking closes
 the hole for the code every current user has already written, with no migration;
 Option 3's safety is real, and wider (it also closes the shared-chain-across-fields
 gap), but only for callers who rewrite their field declarations, which is not the
 population most exposed to this bug today. This weighs Option 3's migration cost
-against a population that, pre-1.0, doesn't yet exist — this project is still at
-`0.1.0`, so "every adopter's code" is speculative, not a real breaking-change bill
-being sent today. The choice stands anyway: a breaking change to the only
-construction pattern this project has ever documented, on the strength of a bug
-class most callers will never hit, isn't proportionate when the non-breaking
-option already covers that same population. A caller who profiles their way to
-this lock as a bottleneck, or who deliberately shares a chain across more than one
-field, already has the fix available without a package change: pass a callable
-instead, which skips the lock entirely and validates independently on every call.
+against a population that, pre-1.0, didn't yet exist — this project was then at
+`0.1.0`, so "every adopter's code" was speculative, not a real breaking-change
+bill. The choice stands anyway: a breaking change to the only construction pattern
+this project had documented, on the strength of a bug class most callers will
+never hit, isn't proportionate when the non-breaking option already covers that
+same population. A caller who profiles their way to this lock as a bottleneck, or
+who shares a filter instance across more than one field, already has the fix
+available without a package change: pass a callable that builds every filter on
+each call, which skips the lock and validates independently.
+
+Option 4 is rejected because it silently copies state a filter may mean to share,
+and can break a model's import. The residual gap's cause lies in phx-filters,
+which keeps per-run state on filter instances, so it is fixed there instead
+([todofixthis/filters#175][]), during the v4 pre-release cycle while a change to
+`BaseFilter` can still ship. Until then, the README and the docs index warn about
+the residual case.
 
 ## Consequences
 
@@ -198,15 +257,17 @@ instead, which skips the lock entirely and validates independently on every call
   validation of that field across every instance of the model — safe by default,
   at the cost of throughput under concurrent load proportional to chain cost.
 - A `FilterField` built from a callable or filter class is unaffected: no lock, no
-  behaviour change, already safe because each call resolves an independent chain.
-- The docstring and README now name the callable form as the recommended pattern
-  both for a chain with an expensive filter (I/O, a slow computation) under
-  concurrent load, and for a chain or sub-chain deliberately shared across more
-  than one `FilterField` — the one pattern the lock doesn't cover. Leaving that
-  case to documentation isn't the same tradeoff Option 1 was rejected for: Option 1
-  would have left the only pattern this project documents unsafe by default; this
-  leaves a pattern nothing here uses unsafe, opt-in only to a caller who already
-  chose to share a chain instance across fields.
+  behaviour change, and safe wherever the callable builds every filter itself.
+- The README names the callable form as the recommended pattern both for a chain
+  with an expensive filter (I/O, a slow computation) under concurrent load, and
+  for a filter instance shared outside one `FilterField` — the one pattern the lock
+  doesn't cover. It says the callable must build every filter on each call, since
+  one returning or extending an existing chain shares its filters just the same.
+  It also says reusing one `Annotated` alias is safe, since its uses share one
+  `FilterField` and so one lock. Leaving the shared case to documentation carries
+  the weakness Option 1 was rejected for, since `|` makes sharing easy to do
+  without noticing. It is accepted only as an interim measure until
+  todofixthis/filters#175 lands.
 - This is the first and only synchronisation primitive in the package; nothing
   else here holds a lock.
 
@@ -214,3 +275,4 @@ instead, which skips the lock entirely and validates independently on every call
 [`FilterChain`]: https://github.com/todofixthis/filters/blob/develop/src/filters/base.py
 [`FilterField`]: ../../src/filters_pydantic/_filter_field.py
 [`FilterRunner`]: https://github.com/todofixthis/filters/blob/develop/src/filters/handlers.py
+[todofixthis/filters#175]: https://github.com/todofixthis/filters/issues/175

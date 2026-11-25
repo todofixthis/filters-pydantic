@@ -43,10 +43,41 @@ with every filter error message for that field joined into one.
 A chain built inline like this is shared across every validation of that field,
 so ``FilterField`` serialises concurrent access to it with a lock (see
 `ADR 005 <https://github.com/todofixthis/filters-pydantic/blob/main/docs/adr/005-serialise-shared-filter-chains.md>`_).
-For an expensive chain (I/O, a slow computation) under concurrent load, or a chain
-you deliberately share across more than one field, pass a zero-argument callable
-instead — ``FilterField(lambda: f.Required | f.Unicode | f.NotEmpty)`` — so each
-validation resolves its own independent chain and skips the lock entirely.
+The lock belongs to the ``FilterField``, so reusing one ``Annotated`` alias across
+fields and models is safe: every use shares that one lock.
+
+The lock can't protect a filter that is also used outside its ``FilterField``. That
+happens when two ``FilterField`` instances are built from the same chain, when code
+outside pydantic runs the chain directly, or when a shared chain is combined into
+two others with ``|`` (on either side), or nested in a ``FilterMapper`` or
+``FilterRepeater``. Each of these reuses the shared chain's filters rather than
+copying them::
+
+   Text = f.Unicode | f.Strip
+
+
+   class Article(BaseModel):
+       # Unsafe: both chains hold Text's own Unicode and Strip filters
+       title: Annotated[str, FilterField(Text | f.MaxLength(50))]
+       body: Annotated[str, FilterField(Text | f.MaxLength(2000))]
+
+For those cases, or for an expensive chain (I/O, a slow computation) under
+concurrent load, pass a zero-argument callable that builds every filter each time
+it runs. A filter class, such as ``FilterField(f.Unicode)``, counts as one. Each
+validation then gets its own independent chain and skips the lock entirely. To
+share a base chain, build it in a function::
+
+   def text() -> f.FilterChain[str]:
+       return f.Unicode | f.Strip
+
+
+   class Article(BaseModel):
+       title: Annotated[str, FilterField(lambda: text() | f.MaxLength(50))]
+       body: Annotated[str, FilterField(lambda: text() | f.MaxLength(2000))]
+
+A callable that uses an existing filter or chain anywhere, such as
+``lambda: Text | f.MaxLength(50)`` or ``lambda: f.Required | Text``, is unsafe for
+the same reason.
 
 Validating a Model Inside a Filter Chain
 -----------------------------------------
