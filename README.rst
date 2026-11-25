@@ -52,31 +52,37 @@ two others with ``|`` (on either side), or nested in a ``FilterMapper`` or
 ``FilterRepeater``. Each of these reuses the shared chain's filters rather than
 copying them::
 
-   Text = f.Unicode | f.Strip
+   text_chain = f.Unicode | f.Strip
 
 
    class Article(BaseModel):
-       # Unsafe: both chains hold Text's own Unicode and Strip filters
-       title: Annotated[str, FilterField(Text | f.MaxLength(50))]
-       body: Annotated[str, FilterField(Text | f.MaxLength(2000))]
+       # Unsafe: both chains hold text_chain's own Unicode and Strip filters
+       title: Annotated[str, FilterField(text_chain | f.MaxLength(50))]
+       body: Annotated[str, FilterField(text_chain | f.MaxLength(2000))]
 
 For those cases, or for an expensive chain (I/O, a slow computation) under
 concurrent load, pass a zero-argument callable that builds every filter each time
 it runs. A filter class, such as ``FilterField(f.Unicode)``, counts as one. Each
-validation then gets its own independent chain and skips the lock entirely. To
-share a base chain, build it in a function::
+validation then gets its own independent chain and skips the lock entirely.
 
-   def text() -> f.FilterChain[str]:
+To share a base chain, make it a filter macro. A macro builds new filters each
+time a chain uses it::
+
+   @f.filter_macro
+   def Text() -> f.FilterChain[str]:
        return f.Unicode | f.Strip
 
 
    class Article(BaseModel):
-       title: Annotated[str, FilterField(lambda: text() | f.MaxLength(50))]
-       body: Annotated[str, FilterField(lambda: text() | f.MaxLength(2000))]
+       title: Annotated[str, FilterField(lambda: Text | f.MaxLength(50))]
+       body: Annotated[str, FilterField(lambda: Text | f.MaxLength(2000))]
+
+Without the lambdas, ``FilterField(Text | f.MaxLength(50))`` is safe too: each
+field owns the chain its ``|`` builds, and its lock covers it.
 
 A callable that uses an existing filter or chain anywhere, such as
-``lambda: Text | f.MaxLength(50)`` or ``lambda: f.Required | Text``, is unsafe for
-the same reason.
+``lambda: text_chain | f.MaxLength(50)`` or ``lambda: f.Required | text_chain``,
+is unsafe, because every call reuses that chain's filter instances.
 
 Sharing a filter with a ``FilterMapper`` or ``FilterRepeater`` also mislabels its
 errors, even on one thread. Once a ``FilterMapper`` holds a filter, that filter's
