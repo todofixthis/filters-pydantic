@@ -8,8 +8,7 @@ from filters.base import BaseFilter
 __all__ = ["PydanticModel"]
 
 
-# phx-filters ships no py.typed marker, so BaseFilter is untyped under mypy.
-class PydanticModel(BaseFilter):  # type: ignore[misc]
+class PydanticModel[T_model: pydantic.BaseModel](BaseFilter[T_model]):
     """Validates a value against a pydantic model.
 
     Use inside a phx-filters chain to validate a nested structure via a
@@ -32,7 +31,7 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
         CODE_INVALID: "{message}",
     }
 
-    def __init__(self, model: type[pydantic.BaseModel]) -> None:
+    def __init__(self, model: type[T_model]) -> None:
         """
         Args:
             model: Validates the incoming value via ``model.model_validate``.
@@ -43,7 +42,7 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.model.__name__})"
 
-    def _apply(self, value: Any) -> Any:
+    def _apply(self, value: Any) -> T_model:
         try:
             return self.model.model_validate(value)
         except pydantic.ValidationError as exc:
@@ -55,4 +54,6 @@ class PydanticModel(BaseFilter):  # type: ignore[misc]
                     sub_key=key,
                     template_vars={"message": error["msg"]},
                 )
-            return None
+            # phx-filters expects `_apply` to return `None` for a rejected
+            # value; todofixthis/filters#121 makes rejection raise instead.
+            return None  # type: ignore[return-value]

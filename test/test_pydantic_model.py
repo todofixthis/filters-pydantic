@@ -8,9 +8,9 @@ import pydantic
 from filters_pydantic import PydanticModel
 
 
-# phx-filters ships no py.typed marker, so BaseFilter (and thus
-# filter_instance) is untyped under mypy either way — these Protocols exist
-# to document filters.pytest's fixture signatures, not to check them.
+# filters.pytest's fixtures carry no annotations, so mypy can't check calls
+# to them either way — these Protocols exist to document their signatures,
+# not to check them.
 class AssertFilterPasses(Protocol):
     def __call__(
         self, filter_instance: Any, test_value: Any, expected_value: Any = ...

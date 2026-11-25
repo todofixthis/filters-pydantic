@@ -1,9 +1,10 @@
 ---
-status: Accepted
+status: Superseded
 date: 2026-10-07
 scope: [.claude/settings.json, .github/workflows/build.yml, AGENTS.md, docs/adr/, pyproject.toml, renovate.json]
 summary: Index, validate and look up ADRs with the phx writing-adrs tool, through the plugin's hooks in sessions and its phx-adr entry point at a pinned release in CI, not a repo-local generator, pre-commit hook or vendored copy.
 revisit-when: A phx plugin release imposes an ADR convention the maintainer rejects; ADRs here are authored in a harness other than Claude Code; the phx plugin drops its ADR tooling.
+superseded-by: 8
 ---
 
 # 007: Rely on the phx Plugin for ADR Tooling

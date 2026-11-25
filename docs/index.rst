@@ -16,10 +16,10 @@ Install alongside `pydantic <https://docs.pydantic.dev/>`_ and
 
    pip install phx-filters-pydantic
 
-``filters`` chains have no generic typing, so wrap one in ``FilterField`` and
-attach it as ``Annotated`` metadata next to an ordinary type hint. The hint
-tells pydantic (and your type checker) what to expect; the chain runs first
-and does the actual validation::
+pydantic can't read a field's type from a ``filters`` chain, so wrap one in
+``FilterField`` and attach it as ``Annotated`` metadata next to an ordinary
+type hint. The hint tells pydantic (and your type checker) what to expect;
+the chain runs first and does the actual validation::
 
    from typing import Annotated
 
@@ -94,7 +94,5 @@ Pydantic Filters is known to be compatible with the following Python versions:
 - 3.13
 - 3.12
 
-.. note::
-
-   I'm only one person, so to keep from getting overwhelmed, I'm only committing to
-   supporting the 3 most recent versions of Python.
+I'm only one person, so to keep from getting overwhelmed, I'm only committing to
+supporting the 3 most recent versions of Python.
