@@ -198,86 +198,9 @@ To build the documentation locally:
 
 Releases
 --------
-<<<<<<< before updating
-Releases are cut from a ``release/<version>`` branch off ``main``, merged via pull
-request, then built, GPG-signed, tagged, and published to `PyPI
+A release bumps the version on ``develop`` and merges ``develop`` into ``main`` through
+a pull request, then is built, GPG-signed, tagged, and published to `PyPI
 <https://pypi.org/project/phx-filters-pydantic/>`_ and the `GitHub Releases page
 <https://github.com/todofixthis/filters-pydantic/releases>`_. See
 ``.agents/skills/release/SKILL.md`` for the full, current procedure — that file is
 the source of truth; this section only summarises it.
-=======
-Steps to build releases are based on
-`Packaging Python Projects Tutorial <https://packaging.python.org/en/latest/tutorials/packaging-projects/>`_.
-
-.. important::
-
-   Make sure to build releases off of the ``main`` branch!
-
-One-time Setup
-~~~~~~~~~~~~~~
-#. Install the ``keyring`` tool and add it to your ``PATH``::
-
-      uv tool install keyring
-      uv tool update-shell
-
-   Restart your shell after running ``update-shell``.
-#. `Create a PyPI API token <https://pypi.org/manage/account/#api-tokens>`_ and store it
-   in the OS keychain::
-
-      keyring set https://upload.pypi.org/legacy/ __token__
-
-   Paste the ``pypi-...`` token when prompted.
-
-1. Build the Project
-~~~~~~~~~~~~~~~~~~~~~
-#. Set ``__version__`` in ``src/filters_pydantic/__init__.py`` to the new version,
-   and merge that change into ``main`` through ``develop``. Hatch reads the version
-   from there, since ``pyproject.toml`` declares it dynamic.
-
-#. Check out ``main`` and pull, so the build and the tag below both carry the new
-   version::
-
-      git checkout main && git pull
-
-#. Delete artefacts from previous builds, if applicable::
-
-    rm dist/*
-
-#. Run the build::
-
-    uv build
-
-#. The build artefacts will be located in the ``dist`` directory at the top level of the
-   project.
-
-2. Upload to PyPI
-~~~~~~~~~~~~~~~~~
-#. Upload build artefacts to PyPI::
-
-    uv publish --username __token__
-
-3. Create GitHub Release
-~~~~~~~~~~~~~~~~~~~~~~~~
-#. Create a tag and push to GitHub::
-
-      git tag -a <version> -m "Release <version>"
-      git push origin <version>
-
-   ``<version>`` must match ``__version__`` on ``main``.
-
-#. Go to the `Releases page for the repo`_.
-#. Click ``Draft a new release``.
-#. Select the tag that you created above.
-#. Specify the title of the release (e.g., ``Pydantic Filters v1.2.3``).
-#. Write a description for the release.  Make sure to include:
-
-   - Credit for code contributed by community members.
-   - Significant functionality that was added/changed/removed.
-   - Any backwards-incompatible changes and/or migration instructions.
-   - SHA256 hashes of the build artefacts.
-#. GPG-sign the description for the release (ASCII-armoured).
-#. Attach the build artefacts to the release.
-#. Click ``Publish release``.
-
-.. _Releases page for the repo: https://github.com/todofixthis/filters-pydantic/releases
->>>>>>> after updating
