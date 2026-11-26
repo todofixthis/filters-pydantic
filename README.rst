@@ -198,8 +198,8 @@ To build the documentation locally:
 
 Releases
 --------
-Releases are cut from a ``release/<version>`` branch off ``main``, merged via pull
-request, then built, GPG-signed, tagged, and published to `PyPI
+A release bumps the version on ``develop`` and merges ``develop`` into ``main`` through
+a pull request, then is built, GPG-signed, tagged, and published to `PyPI
 <https://pypi.org/project/phx-filters-pydantic/>`_ and the `GitHub Releases page
 <https://github.com/todofixthis/filters-pydantic/releases>`_. See
 ``.agents/skills/release/SKILL.md`` for the full, current procedure — that file is
