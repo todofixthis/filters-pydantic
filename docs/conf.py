@@ -58,6 +58,7 @@ autosectionlabel_prefix_document = True
 # -- Options for intersphinx extension ---------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration
 intersphinx_mapping = {
+    "filters": ("https://filters.readthedocs.io/en/latest/", None),
     "python": ("https://docs.python.org/3", None),
 }
 
