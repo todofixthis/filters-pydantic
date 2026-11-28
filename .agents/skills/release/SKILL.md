@@ -41,7 +41,9 @@ Based on the changes, recommend a semver bump:
 Where the latest release and the next version share a pre-release cycle, bump only the pre-release segment (`4.0.0a2` → `4.0.0a3`) unless the developer says otherwise.
 
 ### 5. Gate: breaking changes require a migration guide
-A **breaking change** is anything that makes previously-working code fail — at runtime, or under a type checker. Undocumented behaviour someone relied on still counts; "only a couple of users" measures blast radius, not compatibility. If this release has none, skip to the stop below.
+A **breaking change** is anything that makes previously-working code fail — at runtime, or under a type checker. Undocumented behaviour someone relied on still counts; "only a couple of users" measures blast radius, not compatibility.
+
+A major version bump of a runtime dependency is also breaking: the release moves `[project] dependencies` onto a major the last release didn't require (check `git diff <last-tag>..HEAD -- pyproject.toml`). Dev groups never reach users, so they don't count. The bump counts whether or not our own code changed, because it can conflict with whatever else a user's environment installs. We don't audit which packages those are, or look for a known conflict to justify the label; the bump is the signal. If this release has no breaking change, skip to the stop below.
 
 **First, settle the version.** Step 4 defines minor and patch as *fully backwards-compatible*, so a breaking change in anything but a major contradicts it. When that happens, stop and put it to the developer: bump to major, or keep the smaller bump and record why in an ADR. Neither pick it for them nor draft around it — the answer decides which guide the rest of this step is about, and a release drafted for one version and linked to another ships broken.
 
@@ -125,18 +127,20 @@ pkg=dist/phx_filters_pydantic
 for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do gpg --yes --local-user "$GPG_KEY" --detach-sign "$f"; done
 
 # The primary-key fingerprint of the key that signed, read from a signature,
-# since several keys can share one email address
+# since several keys can share one email address. Fields are cut rather than
+# read with awk: Claude Code replaces a dollar sign and digit in a skill invoked
+# with arguments, which would rewrite awk's field references
 sig=$(ls "$pkg"-*.whl.sig | head -n 1)
-GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | awk '$2 == "VALIDSIG" {print $12}')
+GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | grep '^\[GNUPG:\] VALIDSIG ' | cut -d' ' -f12)
 
 # Users import the key from GitHub, so it must be published there
 if curl -fsSL https://github.com/todofixthis.gpg \
   | gpg --show-keys --with-colons \
-  | awk -F: '$1 == "fpr" {print $10}' \
+  | grep '^fpr:' | cut -d: -f10 \
   | grep -qx "$GPG_FINGERPRINT"; then
   # Removes any copy signed by an earlier run, so a failed signing leaves none
   rm -f release-<version>.md.asc
-  # Writes release-<version>.md.asc
+  # Fills in the fingerprint, then writes release-<version>.md.asc
   sed -i.bak "s/<fingerprint>/$GPG_FINGERPRINT/" release-<version>.md \
     && rm release-<version>.md.bak \
     && gpg --yes --local-user "$GPG_KEY" --clearsign release-<version>.md \
@@ -146,7 +150,7 @@ else
   echo "❌ Signing key '$GPG_FINGERPRINT' isn't published at https://github.com/todofixthis.gpg"
 fi
 ```
-On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed or GitHub couldn't be reached. Once it's fixed, re-run this step alone: step a has already added the checksums.
+On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed. The same message follows a curl error when GitHub couldn't be reached, so check for one before telling the developer the key isn't published. Once it's fixed, re-run this step alone: step a has already added the checksums.
 
 **c. Build the release body** — concatenate the notes and the signed copy:
 ```
@@ -270,7 +274,7 @@ A filled-in breaking changes alert:
 - Technical details of how something works internally
 - Configuration consolidation (unless it changes developer-facing behaviour)
 - Code organisation changes
-- Dependency updates (include only if resolving a critical or high-severity vulnerability)
+- Dependency updates (include only if resolving a critical or high-severity vulnerability, or a major bump to a runtime dependency, which is a breaking change)
 - Improvements to coding agent instructions
 
 **Always omit**
@@ -298,6 +302,8 @@ Then add what the fix leads them into next:
 
 - **Second-order traps.** A fix that lands people in a subtler failure needs that failure documented beside it, with its error text.
 - **Facts stranded in ADRs.** ADRs are not in the toctree and readers never see them. If an ADR holds the only explanation of something a migrating developer needs, the guide is where it goes.
+
+For a runtime dependency's major bump, name the dependency and the old and new majors, and show the resolver's error for a conflicting pin. Don't list which packages might conflict.
 
 Verify every code sample and every error message by running it.
 

@@ -136,6 +136,31 @@ jobs:
       - name: Check ADRs
         run: uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr check # 9.2.0
 
+  # Renovate's own validator checks renovate.json at a pin Renovate bumps
+  # (ADR 026 in todofixthis/cookiecutter-py).
+  # With no renovate.json in its working directory it passes having checked
+  # nothing, so each step checks the file exists first. Its npm `deprecated`
+  # warnings come from Renovate's own dependencies. Keep install scripts on:
+  # without re2's, Renovate falls back to JavaScript regexes and accepts
+  # patterns the hosted app rejects.
+  renovate:
+    runs-on: ubuntu-latest
+    env:
+      # renovate: datasource=npm depName=renovate
+      RENOVATE_VERSION: 44.257.5
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - name: Validate the Renovate config
+        run: |
+          test -f renovate.json
+          npx --yes --package "renovate@${RENOVATE_VERSION}" -- renovate-config-validator --strict
+
   # This project's own jobs, in project.yml, which copier writes once and the
   # project then owns (ADR 021 in todofixthis/cookiecutter-py).
   project:
@@ -146,7 +171,7 @@ jobs:
   # their results into one, so branch protection requires only `gate`. A
   # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
-    needs: [adrs, docs, lint, project, test, type-check]
+    needs: [adrs, docs, lint, project, renovate, test, type-check]
     if: always()
     runs-on: ubuntu-latest
 

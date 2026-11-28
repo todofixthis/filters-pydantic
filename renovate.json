@@ -17,11 +17,22 @@
         "phx-claude-siat@(?<currentDigest>[0-9a-f]{40})#subdirectory=skills/writing-adrs'[^\\n]*# (?<currentValue>\\d+\\.\\d+\\.\\d+)",
         "phx-claude-siat/blob/(?<currentValue>\\d+\\.\\d+\\.\\d+)/"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Track the workflows' annotated env pins, such as the Renovate validator's (ADR 026 in todofixthis/cookiecutter-py).",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z0-9_]+: (?<currentValue>\\S+)"
+      ]
     }
   ],
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgeNpm",
     "security:minimumReleaseAgePypi"
   ],
   "lockFileMaintenance": {
@@ -40,6 +51,23 @@
       "enabled": false,
       "matchPackageNames": ["integrations/github"],
       "matchUpdateTypes": ["major"]
+    },
+    {
+      "automerge": true,
+      "description": "Bump the Renovate validator pin's minor and patch releases monthly, merging once gate passes, since Renovate releases several times a day; a major waits for review (ADR 026 in todofixthis/cookiecutter-py).",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchDepNames": [
+        "renovate"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "schedule": [
+        "* 0-3 1 * *"
+      ]
     }
   ]
 }
