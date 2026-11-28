@@ -41,6 +41,8 @@ uv run mypy src test
 uv run ruff check
 # Check formatting (the pre-commit hook reformats; CI only checks)
 uv run black --check .
+# Validate renovate.json at the version CI pins (needs a Node version Renovate's `engines` field accepts; npm's `deprecated` warnings on a first run come from Renovate's own dependencies)
+v=$(awk '/RENOVATE_VERSION:/ {print $2}' .github/workflows/build.yml) && test -n "$v" && timeout 600 npx --yes --package "renovate@$v" -- renovate-config-validator --strict
 # Build docs: skip unless .readthedocs.yaml exists (a project without its own docs site has no Sphinx files)
 uv run make -C docs clean && uv run make -C docs html SPHINXOPTS=-W
 ```
